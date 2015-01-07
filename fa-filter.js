@@ -161,7 +161,13 @@ $(document.body).on('click', '#faf-add', function() {
 $(document.body).on('click', 'a.fa-filter-remove', function(event) {
     var username = event.target.id.substr(7);
     delete userArray[username];
-    $('table.faf-list tr#filter-' + username).remove();
+    
+    // Replace periods/colons with escaped versions. Who the fuck allows periods in usernames, seriously?
+    userEsc = username.replace(/\./, '\\.');
+    userEsc = userEsc.replace(/:/, '\:');
+    
+    console.log(userEsc)
+    $('table.faf-list tr#filter-' + userEsc).remove();
 });
 
 // === UPDATE ===
@@ -170,11 +176,15 @@ $(document.body).on('click', '#faf-update', function() {
         var username = this.id.substr(7);
         var vals = {'subs':0, 'shouts':0, 'coms':0, 'notifications':0};
         
+        // Replace periods/colons with escaped versions. Who the fuck allows periods in usernames, seriously?
+        userEsc = username.replace(/\./, '\\.');
+        userEsc = userEsc.replace(/:/, '\:');
+        
         // Check checkboxes
-        if ($('#faf-check-subs-' + username).is(':checked')) { vals['subs'] = 1; }
-        if ($('#faf-check-shouts-' + username).is(':checked')) { vals['shouts'] = 1; }
-        if ($('#faf-check-coms-' + username).is(':checked')) { vals['coms'] = 1; }
-        if ($('#faf-check-notifications-' + username).is(':checked')) { vals['notifications'] = 1; }
+        if ($('#faf-check-subs-' + userEsc).is(':checked')) { vals['subs'] = 1; }
+        if ($('#faf-check-shouts-' + userEsc).is(':checked')) { vals['shouts'] = 1; }
+        if ($('#faf-check-coms-' + userEsc).is(':checked')) { vals['coms'] = 1; }
+        if ($('#faf-check-notifications-' + userEsc).is(':checked')) { vals['notifications'] = 1; }
         
         userArray[username] = vals;
     });
