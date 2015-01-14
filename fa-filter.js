@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name        Furaffinity Filter
+// @name        FA Content Filter
 // @namespace   fa-filter
-// @description Filters user-defined content while browsing FA.
+// @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
 // @version     1.0
