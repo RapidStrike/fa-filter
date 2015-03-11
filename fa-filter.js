@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name        FA Content Filter
 // @namespace   fa-filter
-// @description Filters user-defined content while browsing Furaffinity.
+// @description Filters user-defined content while browsing FA.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.0
+// @version     1.1.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -36,22 +36,25 @@ function writeSettings() {
 // === FUNCTIONS ===
     // Hide user submissions
     function hideSubmissions(username) {
-        // Browse
+        // Browse/Submissions
         var submission1 = $('.t-image a[href="/user/' + username + '/"]').closest('.t-image');
-        submission1.addClass('hidden-sub');
-        submission1.hide();
+        stylizeHidden(submission1);
+        // Mark Submissions as Checked
+        submission1.children('small').children('input').prop('checked', true);
+        submission1.addClass('hidden-sub').hide();
         
         // Favorites/Front Page
         var submission2 = $('b[id^="sid_"] img[src$="#' + username + '"]').closest('b');
-        submission2.addClass('hidden-sub');
-        submission2.hide();
+        stylizeHidden(submission2);
+        submission2.addClass('hidden-sub').hide();
     }
 
     // Hide user shouts
     function hideShouts(username) {
         var shout = $('table[id^="shout-"] td.alt1 img[alt="' + username + '"]').closest('table[id^="shout-"]');
-        shout.addClass('hidden-shout');
-        shout.hide();
+        shout.addClass('hidden-shout').hide();
+        stylizeHidden(shout.find('table'));
+        shout.next('br').addClass('hidden-shout-br').hide();
     }
 
     // Hide user comments and threads
@@ -84,10 +87,83 @@ function writeSettings() {
     // Hide user notifications
     function hideNotifications(username) {
         var notification = $('.message-stream a[href="/user/' + username + '/"]').closest('li');
+        stylizeHidden(notification);
         notification.addClass('hidden-notification').hide();
+    }
+    
+    function stylizeHidden(item) {
+        item.css('background-color', '#FFBBBB');
+        item.css('color', '#FF0000');
+        $('a:link', item).css('color', '#FF0000');
+        $('a:visited', item).css('color', '#FF0000');
     }
 
 // === UI ===
+// == Filtered Toggle ==
+// Submissions
+function filtersSubs() {
+    if ($('.hidden-sub').length > 0) {
+        $display = '<input style="float:right;" id="faf-toggle-subs" class="button" type="button" value="Toggle Filtered Submissions (' + $('.hidden-sub').length + ')"></input>';
+        $('form').first().append($display);
+    }
+}
+
+// Followed Submissions
+function filtersSubsFollow() {
+    if ($('.hidden-sub').length > 0) {
+        $display = '<input id="faf-toggle-subs" class="button" type="button" value="Toggle Filtered Submissions (' + $('.hidden-sub').length + ')"></input>';
+        $('.actions').append($display);
+    }
+}
+
+// Shouts
+function filtersShouts() {
+    if ($('.hidden-shout').length > 0) {
+        $display = '<center><input id="faf-toggle-shouts" class="button" type="button" value="Toggle Filtered Shouts (' + $('.hidden-shout').length + ')"></input></center>';
+        // TODO: Find alternative to extremely hacky way to find shouts title.
+        $('table[id^="shout-"]').first().prevAll('table.maintable:first').append($display);
+    }
+}
+
+// Comments
+function filtersComments() {
+    if ($('.hidden-comment').length > 0) {
+        $display = '<input style="float:right;" id="faf-toggle-comments" class="button" type="button" value="Toggle Filtered Comments (' + $('.hidden-comment').length + ')"></input>';
+        // TODO: Find alternative to extremely hacky way to find comments title.
+        $('table.container-comment').first().parent().parent().prev().children().append($display);
+    }
+}
+
+// Notifications
+function filtersNotifications() {
+    if ($('.hidden-notification').length > 0) {
+        $display = '<input id="faf-toggle-notifications" class="button" type="button" value="Toggle Filtered Notifications (' + $('.hidden-notification').length + ')"></input>';
+        $('.global-controls').append($display);
+    }
+}
+
+// Show/Hide Submissions
+$(document.body).on('click', '#faf-toggle-subs', function() {
+    $('.hidden-sub').toggle();
+});
+
+// Show/Hide Shouts
+$(document.body).on('click', '#faf-toggle-shouts', function() {
+    $('.hidden-shout').toggle();
+    $('.hidden-shout-br').toggle();
+});
+
+// Show/Hide Comments
+$(document.body).on('click', '#faf-toggle-comments', function() {
+    $('.hidden-comment').toggle();
+})
+
+// Show/Hide Notifications
+$(document.body).on('click', '#faf-toggle-notifications', function() {
+    $('.hidden-notification').toggle();
+})
+
+// == User Settings ==
 function displaySettings() {
     // Navbar link
     $('<li class="noblock"><a target="_blank" href="/controls/site-settings#fa-filter">FA Filter</a></li>').insertAfter($('li.sfw-toggle'));
@@ -144,7 +220,7 @@ function addFilterUser(username, data) {
     $('table.faf-list tr:last').after(row);
 }
 
-// === ADD ===
+// Add
 $(document.body).on('click', '#faf-add', function() {
     var username = $.trim($('#faf-add-username').val());
     $('#faf-add-username').val('');
@@ -157,7 +233,7 @@ $(document.body).on('click', '#faf-add', function() {
     }
 });
 
-// === REMOVE ===
+// Remove
 $(document.body).on('click', 'a.fa-filter-remove', function(event) {
     var username = event.target.id.substr(7);
     delete userArray[username];
@@ -170,7 +246,7 @@ $(document.body).on('click', 'a.fa-filter-remove', function(event) {
     $('table.faf-list tr#filter-' + userEsc).remove();
 });
 
-// === UPDATE ===
+// Update
 $(document.body).on('click', '#faf-update', function() {
     $('.faf-list tr[id^="filter-"]').each(function() {
         var username = this.id.substr(7);
@@ -195,10 +271,21 @@ $(document.body).on('click', '#faf-update', function() {
     // Display message
     $('.faf-update-status').fadeIn('slow');
     setTimeout(function() {
-        $('.faf-update-status').fadeOut('slow')
+        $('.faf-update-status').fadeOut('slow');
     }, 5000);
 });
 
 displaySettings();
 
-setTimeout(parseSettings, 100);
+setTimeout(parseSettings, 50);
+
+// Submissions
+if (window.location.pathname.lastIndexOf('/browse', 0) === 0) setTimeout(filtersSubs, 100);
+else if (window.location.pathname.lastIndexOf('/favorites', 0) === 0) setTimeout(filtersSubs, 100);
+else if (window.location.pathname.lastIndexOf('/msg/submissions', 0) === 0) setTimeout(filtersSubsFollow, 100);
+// Shouts
+else if (window.location.pathname.lastIndexOf('/user', 0) === 0) setTimeout(filtersShouts, 100);
+// Comments
+else if (window.location.pathname.lastIndexOf('/view', 0) === 0) setTimeout(filtersComments, 100);
+// Notifications
+else if (window.location.pathname.lastIndexOf('/msg/others', 0) === 0) setTimeout(filtersNotifications, 100);

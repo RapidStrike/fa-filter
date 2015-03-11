@@ -2,6 +2,7 @@ FA Filter
 =========
 
 This is a simple userscript for filtering out people you don't want to see on Furaffinity.
+<b>To install this script visit: https://greasyfork.org/en/scripts/7483-fa-content-filter</b>
 
 ## Features
 - Filtering options for user submissions, comments, shouts, and notifications.
