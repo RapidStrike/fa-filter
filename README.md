@@ -1,7 +1,7 @@
 FA Filter
 =========
 
-This is a simple userscript for filtering out people you don't want to see on Furaffinity.
+This is a simple userscript for filtering out people you don't want to see on Furaffinity.<br>
 <b>To install this script visit: https://greasyfork.org/en/scripts/7483-fa-content-filter</b>
 
 ## Features
@@ -11,9 +11,9 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
-<b>1.0</b> (2014-12-17) - Initial commit.
-<b>1.1</b> (2015-02-02) - Added the ability to show hidden items. Toggle buttons will appear if a hidden item is on the page, and hidden items will have a red style around them when shown.
-<b>1.2</b> (2015-12-05) - Added support for beta layout.
+<b>1.0</b> (2014-12-17) - Initial commit.<br>
+<b>1.1</b> (2015-02-02) - Added the ability to show hidden items. Toggle buttons will appear if a hidden item is on the page, and hidden items will have a red style around them when shown.<br>
+<b>1.2</b> (2015-12-05) - Added support for beta layout.<br>
 
 ## To Do
 - [ ] Add the option to show hidden contributions.
