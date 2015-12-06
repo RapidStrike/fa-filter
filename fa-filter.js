@@ -4,17 +4,20 @@
 // @description Filters user-defined content while browsing FA.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.1.1
+// @version     1.2.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
 // @grant       GM_openInTab
 // ==/UserScript==
 
+// === WARNING ===
+// THE TAG FUNCTIONS ARE COMMENTED OUT IN ORDER TO PREVENT ACCIDENTAL DDoS DETECTION ON FURAFFINITY.
 this.$ = this.jQuery = jQuery.noConflict(true);
 
 // === INITIALIZE USER ARRAY ===
 var userArray = JSON.parse(GM_getValue('userList', '{}'));
+//var tagArray = JSON.parse(GM_getvalue('tagList', '{}'));
 
 // === FILTER ===
 var parseSettings = function() {
@@ -27,6 +30,17 @@ var parseSettings = function() {
         });
     }
 }
+
+//var parseTagSettings = function() {
+//    $('.t-image a[href^="/view"]').each(function() {
+//        var url = $(this).attr('href');
+//        console.log(url);
+//        $.post(url, function(data) {
+//            console.log($('#keywords', data).text());
+//        });
+//    });
+//}
+
 
 // === SAVE ===
 function writeSettings() {
@@ -51,14 +65,21 @@ function writeSettings() {
 
     // Hide user shouts
     function hideShouts(username) {
+        // Classic
         var shout = $('table[id^="shout-"] td.alt1 img[alt="' + username + '"]').closest('table[id^="shout-"]');
         shout.addClass('hidden-shout').hide();
         stylizeHidden(shout.find('table'));
         shout.next('br').addClass('hidden-shout-br').hide();
+        
+        // Beta
+        var shoutBeta = $('table[id^="shout-"] .avatarcell img[alt="' + username +'"]').closest('table[id^="shout-"]');
+        shoutBeta.addClass('hidden-shout').hide();
+        stylizeHidden(shoutBeta.find('.usercommentbubble'));
     }
 
     // Hide user comments and threads
     function hideComments(username) {
+        // Classic
         var comments = $('.container-comment td.icon img[alt="' + username + '"]').closest('.container-comment');
         
         $(comments).each(function() {
@@ -78,6 +99,32 @@ function writeSettings() {
                         }
                     } else {
                        break;
+                    }
+                }
+            }
+        });
+        
+        // Beta
+        var commentsBeta = $('.usercommentseperator .avatarcell img[alt="' + username + '"]').closest('.usercommentseperator');
+        stylizeHidden(commentsBeta.find('.usercommentbubble'));
+        
+        $(commentsBeta).each(function() {
+            // Hide comment and get width
+            if (!($(this).hasClass('hidden-comment'))) {
+                var width = Number($(this).addClass('hidden-comment').hide().attr('width').slice(0,-1));
+                var current = $(this).next('.usercommentseperator');
+                
+                // Iterate through the comments until there's a width that is greater than or equal
+                while (true) {
+                    if (current.length) {
+                        if (Number(current.attr('width').slice(0,-1)) < width) {
+                            current.addClass('hidden-comment').hide();
+                            current = current.next('.usercommentseperator');
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
                     }
                 }
             }
@@ -120,8 +167,10 @@ function filtersSubsFollow() {
 function filtersShouts() {
     if ($('.hidden-shout').length > 0) {
         $display = '<center><input id="faf-toggle-shouts" class="button" type="button" value="Toggle Filtered Shouts (' + $('.hidden-shout').length + ')"></input></center>';
-        // TODO: Find alternative to extremely hacky way to find shouts title.
+        // Classic [TODO: Find alternative to extremely hacky way to find shouts title.]
         $('table[id^="shout-"]').first().prevAll('table.maintable:first').append($display);
+        // Beta
+        $('.shoutboxcontainer').append($display);
     }
 }
 
@@ -129,8 +178,10 @@ function filtersShouts() {
 function filtersComments() {
     if ($('.hidden-comment').length > 0) {
         $display = '<input style="float:right;" id="faf-toggle-comments" class="button" type="button" value="Toggle Filtered Comments (' + $('.hidden-comment').length + ')"></input>';
-        // TODO: Find alternative to extremely hacky way to find comments title.
+        // Classic [TODO: Find alternative to extremely hacky way to find comments title.]
         $('table.container-comment').first().parent().parent().prev().children().append($display);
+        // Beta
+        $($display).insertAfter('.tags-row');
     }
 }
 
@@ -169,36 +220,66 @@ function displaySettings() {
     $('<li class="noblock"><a target="_blank" href="/controls/site-settings#fa-filter">FA Filter</a></li>').insertAfter($('li.sfw-toggle'));
     
     if (window.location.pathname.lastIndexOf('/controls/site-settings', 0) === 0) {
-        // HTML Code (hacky, need to find better way)
-        var settingsDisplay = '<table id="fa-filter" cellpadding="0" cellspacing="1" border="0" class="section maintable"><tbody>' +
-            '<tr><td height="22" class="cat links">&nbsp;<strong>FA Filter</strong></td></tr>' +
-            '<tr><td class="alt1 addpad ucp-site-settings" align="center">' +
-                '<table cellspacing="1" cellpadding="0" border="0"><tbody>' +
+        // Hacky way, but there are no tables in the beta layout.
+        if (!$('table').length) {
+            // HTML Code (hacky, need to find a better way)
+            var settingsDisplay = '<h2 id="fa-filter">FA Filter</h2>' +
+            '<div class="cplineitem">' +
+                '<div class="cprow">' +
+                    '<div class="cpcell">' +
+                        '<strong>Add a User</strong><br/>' +
+                        '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br/><strong>Note:</strong> Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".' +
+                    '</div>' +
+                    '<div class="cpcell cptoggle">' +
+                        '<input class="textbox" type="text" id="faf-add-username" maxlength="50"></input><br\><br\><input id="faf-add" class="button" type="button" value="Add User" />' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+            '<table id="activity-periods-list" class="maintable" width="100%" cellspacing="1" cellpadding="0" border="0">' +
+                '<tbody>' +
                     '<tr>' +
-                        '<th><strong>Add a User</strong></th>' +
-                        '<td><input type="text" id="faf-add-username" maxlength="50"></input>&nbsp;<input id="faf-add" class="button" type="button" value="Add User"></td>' +
-                        '<td class="option-description">' +
-                            '<h3>Hide a user\'s contributions to the site.</h3>' +
-                            '<p>Tired of seeing somebody\'s artwork on the site? Add them to your filter list!<br>Note: Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".</p>' +
-                        '</td>' +
-                    '</tr>' +
-                    '<tr>' +
-                        '<th class="noborder" style="vertical-align: text-top;"><strong style="position: relative; top: 25px;">Modify Filters</strong></th>' +
-                        '<td class="noborder">' +
-                            '<table cellspacing="0" cellpadding="0" border="0" class="faf-list">' +
-                                '<tr><th><strong>Username</strong></th><th><strong>Submissions</strong></th><th><strong>Shouts</strong></th><th><strong>Comments</strong></th><th><strong>Notifications</strong></th></tr>' +
+                        '<td class="alt1">' +
+                            '<table class="maintable container faf-list" width="100%" cellspacing="1" cellpadding="2" border="0">' +
+                                '<tr><td class="cat" align="left"><b>Username</b></td><td class="cat" width="200px"><b>Submissions</b></td><td class="cat" width="200px"><b>Shouts</b></td><td class="cat" width="200px"><b>Comments</b></td><td class="cat" width="200px"><b>Notifications</b></td></tr>' +
                             '</table>' +
-                            '<br><br><input class="button" id="faf-update" type="button" value="Update Filters"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
-                        '</td>' +
-                        '<td class="option-description noborder">' +
-                            '<h3>Choose what items you don\'t want to see.</h3>' +
-                            '<p>If you still want to see some of the things that a user contributes, you can control that here.</p>' +
+                            '<br/><input class="button" id="faf-update" type="button" value="Update Filters"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
                         '</td>' +
                     '</tr>' +
-                '</tbody></table>' +
-            '</td></tr>' +
-            '</tbody></table>';
-        $('form').append(settingsDisplay);
+                '</tbody>' +
+            '</table>';
+            $(settingsDisplay).insertAfter('.cplineitem:last');
+        } else {
+            // HTML Code (hacky, need to find better way)
+            var settingsDisplay = '<table id="fa-filter" cellpadding="0" cellspacing="1" border="0" class="section maintable"><tbody>' +
+                '<tr><td height="22" class="cat links">&nbsp;<strong>FA Filter</strong></td></tr>' +
+                '<tr><td class="alt1 addpad ucp-site-settings" align="center">' +
+                    '<table cellspacing="1" cellpadding="0" border="0"><tbody>' +
+                        '<tr>' +
+                            '<th><strong>Add a User</strong></th>' +
+                            '<td><input type="text" id="faf-add-username" maxlength="50"></input>&nbsp;<input id="faf-add" class="button" type="button" value="Add User"></td>' +
+                            '<td class="option-description">' +
+                                '<h3>Hide a user\'s contributions to the site.</h3>' +
+                                '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br>Note: Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".</p>' +
+                            '</td>' +
+                        '</tr>' +
+                        '<tr>' +
+                            '<th class="noborder" style="vertical-align: text-top;"><strong style="position: relative; top: 25px;">Modify Filters</strong></th>' +
+                            '<td class="noborder">' +
+                                '<table cellspacing="0" cellpadding="0" border="0" class="faf-list">' +
+                                    '<tr><th><strong>Username</strong></th><th><strong>Submissions</strong></th><th><strong>Shouts</strong></th><th><strong>Comments</strong></th><th><strong>Notifications</strong></th></tr>' +
+                                '</table>' +
+                                '<br><br><input class="button" id="faf-update" type="button" value="Update Filters"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
+                            '</td>' +
+                            '<td class="option-description noborder">' +
+                                '<h3>Choose what items you don\'t want to see.</h3>' +
+                                '<p>If you still want to see some of the things that a user contributes, you can control that here.</p>' +
+                            '</td>' +
+                        '</tr>' +
+                    '</tbody></table>' +
+                '</td></tr>' +
+                '</tbody></table>';
+            $('form').append(settingsDisplay);
+        }
         
         // Populate list
         $.each(userArray, function(username, data) {
@@ -209,7 +290,7 @@ function displaySettings() {
 
 // Display user in the filter table
 function addFilterUser(username, data) {
-    var row = '<tr id="filter-' + username + '"><td class="noborder"><a class="fa-filter-remove" id="faf-rm-' + username + '" href="#!">[x]</a> ' + username + '</td>';
+    var row = '<tr class="checked" id="filter-' + username + '"><td class="noborder"><a class="fa-filter-remove" id="faf-rm-' + username + '" href="#!">[x]</a> ' + username + '</td>';
     if (data['subs'] === 1) { row += '<td class="noborder"><input id="faf-check-subs-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-subs-' + username + '" type="checkbox"></td>'; }
     if (data['shouts'] === 1) { row += '<td class="noborder"><input id="faf-check-shouts-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-shouts-' + username + '" type="checkbox"></td>'; }
     if (data['coms'] === 1) { row += '<td class="noborder"><input id="faf-check-coms-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-coms-' + username + '" type="checkbox"></td>'; }
@@ -278,6 +359,7 @@ $(document.body).on('click', '#faf-update', function() {
 displaySettings();
 
 setTimeout(parseSettings, 50);
+//setTimeout(parseTagSettings, 100);
 
 // Submissions
 if (window.location.pathname.lastIndexOf('/browse', 0) === 0) setTimeout(filtersSubs, 100);
