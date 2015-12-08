@@ -4,7 +4,7 @@
 // @description Filters user-defined content while browsing FA.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.2.0
+// @version     1.3.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -134,8 +134,12 @@ function writeSettings() {
     // Hide user notifications
     function hideNotifications(username) {
         var notification = $('.message-stream a[href="/user/' + username + '/"]').closest('li');
-        stylizeHidden(notification);
         notification.addClass('hidden-notification').hide();
+        stylizeHidden(notification);
+        notification.children('input').prop('checked', true);
+        
+        // Classic only
+        notification.children('table').children('tbody').children('tr').children('td').children('.checkbox').children('input').prop('checked', true);
     }
     
     function stylizeHidden(item) {
@@ -146,7 +150,7 @@ function writeSettings() {
     }
 
 // === UI ===
-// == Filtered Toggle ==
+// == Filter Toggle ==
 // Submissions
 function filtersSubs() {
     if ($('.hidden-sub').length > 0) {
@@ -167,10 +171,19 @@ function filtersSubsFollow() {
 function filtersShouts() {
     if ($('.hidden-shout').length > 0) {
         $display = '<center><input id="faf-toggle-shouts" class="button" type="button" value="Toggle Filtered Shouts (' + $('.hidden-shout').length + ')"></input></center>';
-        // Classic [TODO: Find alternative to extremely hacky way to find shouts title.]
+        // Classic
         $('table[id^="shout-"]').first().prevAll('table.maintable:first').append($display);
         // Beta
         $('.shoutboxcontainer').append($display);
+    }
+}
+
+// Shouts (Controls, Beta Only)
+function filtersShoutsControl() {
+    if ($('.hidden-shout').length > 0) {
+        $display = '<br><br><input id="faf-toggle-shouts" class="button" type="button" value = "Toggle Filtered Shouts (' + $('.hidden-shout').length + ')"></input>';
+        $('div[id="controlpanel"] .alignright').append($display);
+        $('.hidden-shout input').prop('checked', true);
     }
 }
 
@@ -178,7 +191,7 @@ function filtersShouts() {
 function filtersComments() {
     if ($('.hidden-comment').length > 0) {
         $display = '<input style="float:right;" id="faf-toggle-comments" class="button" type="button" value="Toggle Filtered Comments (' + $('.hidden-comment').length + ')"></input>';
-        // Classic [TODO: Find alternative to extremely hacky way to find comments title.]
+        // Classic
         $('table.container-comment').first().parent().parent().prev().children().append($display);
         // Beta
         $($display).insertAfter('.tags-row');
@@ -190,6 +203,27 @@ function filtersNotifications() {
     if ($('.hidden-notification').length > 0) {
         $display = '<input id="faf-toggle-notifications" class="button" type="button" value="Toggle Filtered Notifications (' + $('.hidden-notification').length + ')"></input>';
         $('.global-controls').append($display);
+        
+        // = Notification Count =
+        // Classic
+        if ($('fieldset[id^="messages-watches"] .hidden-notification').length > 0)
+            $('fieldset[id^="messages-watches"] h3').append(' (' + $('fieldset[id^="messages-watches"] .hidden-notification').length + ' filtered)');
+        if ($('fieldset[id^="messages-comments-submission"] .hidden-notification').length > 0)
+            $('fieldset[id^="messages-comments-submission"] h3').append(' (' + $('fieldset[id^="messages-comments-submission"] .hidden-notification').length + ' filtered)');
+        if ($('fieldset[id^="messages-shouts"] .hidden-notification').length > 0)
+            $('fieldset[id^="messages-shouts"] h3').append(' (' + $('fieldset[id^="messages-shouts"] .hidden-notification').length + ' filtered)');
+        if ($('fieldset[id^="messages-favorites"] .hidden-notification').length > 0)
+            $('fieldset[id^="messages-favorites"] h3').append(' (' + $('fieldset[id^="messages-favorites"] .hidden-notification').length + ' filtered)');
+        
+        // Beta
+        if ($('fieldset[id^="messages-watches"] .hidden-notification').length > 0)
+            $('fieldset[id^="messages-watches"] h2').append(' (' + $('fieldset[id^="messages-watches"] .hidden-notification').length + ' filtered)');
+        if ($('fieldset[id^="messages-comments-submission"] .hidden-notification').length > 0)
+            $('fieldset[id^="messages-comments-submission"] h2').append(' (' + $('fieldset[id^="messages-comments-submission"] .hidden-notification').length + ' filtered)');
+        if ($('fieldset[id^="messages-shouts"] .hidden-notification').length > 0)
+            $('fieldset[id^="messages-shouts"] h2').append(' (' + $('fieldset[id^="messages-shouts"] .hidden-notification').length + ' filtered)');
+        if ($('fieldset[id^="messages-favorites"] .hidden-notification').length > 0)
+            $('fieldset[id^="messages-favorites"] h2').append(' (' + $('fieldset[id^="messages-favorites"] .hidden-notification').length + ' filtered)');
     }
 }
 
@@ -220,9 +254,9 @@ function displaySettings() {
     $('<li class="noblock"><a target="_blank" href="/controls/site-settings#fa-filter">FA Filter</a></li>').insertAfter($('li.sfw-toggle'));
     
     if (window.location.pathname.lastIndexOf('/controls/site-settings', 0) === 0) {
-        // Hacky way, but there are no tables in the beta layout.
+        // Brute forced, but there are no tables in the beta layout site-settings page. This is one of the major differences.
         if (!$('table').length) {
-            // HTML Code (hacky, need to find a better way)
+            // HTML Code
             var settingsDisplay = '<h2 id="fa-filter">FA Filter</h2>' +
             '<div class="cplineitem">' +
                 '<div class="cprow">' +
@@ -249,7 +283,7 @@ function displaySettings() {
             '</table>';
             $(settingsDisplay).insertAfter('.cplineitem:last');
         } else {
-            // HTML Code (hacky, need to find better way)
+            // HTML Code
             var settingsDisplay = '<table id="fa-filter" cellpadding="0" cellspacing="1" border="0" class="section maintable"><tbody>' +
                 '<tr><td height="22" class="cat links">&nbsp;<strong>FA Filter</strong></td></tr>' +
                 '<tr><td class="alt1 addpad ucp-site-settings" align="center">' +
@@ -367,6 +401,7 @@ else if (window.location.pathname.lastIndexOf('/favorites', 0) === 0) setTimeout
 else if (window.location.pathname.lastIndexOf('/msg/submissions', 0) === 0) setTimeout(filtersSubsFollow, 100);
 // Shouts
 else if (window.location.pathname.lastIndexOf('/user', 0) === 0) setTimeout(filtersShouts, 100);
+else if (window.location.pathname.lastIndexOf('/controls/shouts', 0) === 0) setTimeout(filtersShoutsControl, 100);
 // Comments
 else if (window.location.pathname.lastIndexOf('/view', 0) === 0) setTimeout(filtersComments, 100);
 // Notifications
