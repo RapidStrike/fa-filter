@@ -11,6 +11,10 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.4</b> (2015-12-17)<br>
+- Updated beta layout compatibility.
+- Journals should now be properly filtered.
+
 <b>1.3</b> (2015-12-07)<br>
 - Hidden notifications are automatically marked for deletion on page load.
 - Messages are appended to the notification titles so you know which sections have filtered items.
@@ -29,4 +33,4 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 ## To Do
 - [x] Add the option to show hidden contributions.
 - [x] Add the ability to delete hidden notifications.
-- [x] Add support for the beta layout.
+- [ ] Add support for the beta layout. (Ongoing)

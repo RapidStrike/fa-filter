@@ -4,7 +4,7 @@
 // @description Filters user-defined content while browsing FA.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.3.0
+// @version     1.4.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -51,7 +51,7 @@ function writeSettings() {
     // Hide user submissions
     function hideSubmissions(username) {
         // Browse/Submissions
-        var submission1 = $('.t-image a[href="/user/' + username + '/"]').closest('.t-image');
+        var submission1 = $('b[id^="sid_"] a[href="/user/' + username + '/"]').closest('b');
         stylizeHidden(submission1);
         // Mark Submissions as Checked
         submission1.children('small').children('input').prop('checked', true);
@@ -72,9 +72,9 @@ function writeSettings() {
         shout.next('br').addClass('hidden-shout-br').hide();
         
         // Beta
-        var shoutBeta = $('table[id^="shout-"] .avatarcell img[alt="' + username +'"]').closest('table[id^="shout-"]');
+        var shoutBeta = $('table[id^="shout-"] .comments-flex-item-icon img[alt="' + username +'"]').closest('table[id^="shout-"]');
         shoutBeta.addClass('hidden-shout').hide();
-        stylizeHidden(shoutBeta.find('.usercommentbubble'));
+        stylizeHidden(shoutBeta.find('.comments-flex-item-main'));
     }
 
     // Hide user comments and threads
@@ -105,21 +105,21 @@ function writeSettings() {
         });
         
         // Beta
-        var commentsBeta = $('.usercommentseperator .avatarcell img[alt="' + username + '"]').closest('.usercommentseperator');
-        stylizeHidden(commentsBeta.find('.usercommentbubble'));
+        var commentsBeta = $('.container-comment .comments-flex-item-icon img[alt="' + username + '"]').closest('.container-comment');
+        stylizeHidden(commentsBeta.find('.comments-flex-item-main'));
         
         $(commentsBeta).each(function() {
             // Hide comment and get width
             if (!($(this).hasClass('hidden-comment'))) {
                 var width = Number($(this).addClass('hidden-comment').hide().attr('width').slice(0,-1));
-                var current = $(this).next('.usercommentseperator');
+                var current = $(this).next('.container-comment');
                 
                 // Iterate through the comments until there's a width that is greater than or equal
                 while (true) {
                     if (current.length) {
                         if (Number(current.attr('width').slice(0,-1)) < width) {
                             current.addClass('hidden-comment').hide();
-                            current = current.next('.usercommentseperator');
+                            current = current.next('.container-comment');
                         } else {
                             break;
                         }
@@ -216,14 +216,16 @@ function filtersNotifications() {
             $('fieldset[id^="messages-favorites"] h3').append(' (' + $('fieldset[id^="messages-favorites"] .hidden-notification').length + ' filtered)');
         
         // Beta
-        if ($('fieldset[id^="messages-watches"] .hidden-notification').length > 0)
-            $('fieldset[id^="messages-watches"] h2').append(' (' + $('fieldset[id^="messages-watches"] .hidden-notification').length + ' filtered)');
-        if ($('fieldset[id^="messages-comments-submission"] .hidden-notification').length > 0)
-            $('fieldset[id^="messages-comments-submission"] h2').append(' (' + $('fieldset[id^="messages-comments-submission"] .hidden-notification').length + ' filtered)');
-        if ($('fieldset[id^="messages-shouts"] .hidden-notification').length > 0)
-            $('fieldset[id^="messages-shouts"] h2').append(' (' + $('fieldset[id^="messages-shouts"] .hidden-notification').length + ' filtered)');
-        if ($('fieldset[id^="messages-favorites"] .hidden-notification').length > 0)
-            $('fieldset[id^="messages-favorites"] h2').append(' (' + $('fieldset[id^="messages-favorites"] .hidden-notification').length + ' filtered)');
+        if ($('div[id^="messages-watches"] .hidden-notification').length > 0)
+            $('div[id^="messages-watches"]').prev().find('h3').append(' (' + $('div[id^="messages-watches"] .hidden-notification').length + ' filtered)');
+        if ($('div[id^="messages-comments-submission"] .hidden-notification').length > 0)
+            $('div[id^="messages-comments-submission"]').prev().find('h3').append(' (' + $('div[id^="messages-comments-submission"] .hidden-notification').length + ' filtered)');
+        if ($('div[id^="messages-shouts"] .hidden-notification').length > 0)
+            $('div[id^="messages-shouts"]').prev().find('h3').append(' (' + $('div[id^="messages-shouts"] .hidden-notification').length + ' filtered)');
+        if ($('div[id^="messages-favorites"] .hidden-notification').length > 0)
+            $('div[id^="messages-favorites"]').prev().find('h3').append(' (' + $('div[id^="messages-favorites"] .hidden-notification').length + ' filtered)');
+        if ($('div[id^="messages-journals"] .hidden-notification').length > 0)
+            $('div[id^="messages-journals"]').prev().find('h3').append(' (' + $('div[id^="messages-journals"] .hidden-notification').length + ' filtered)');
     }
 }
 
@@ -256,34 +258,43 @@ function displaySettings() {
     if (window.location.pathname.lastIndexOf('/controls/site-settings', 0) === 0) {
         // Brute forced, but there are no tables in the beta layout site-settings page. This is one of the major differences.
         if (!$('table').length) {
-            // HTML Code
-            var settingsDisplay = '<h2 id="fa-filter">FA Filter</h2>' +
-            '<div class="cplineitem">' +
-                '<div class="cprow">' +
-                    '<div class="cpcell">' +
-                        '<strong>Add a User</strong><br/>' +
-                        '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br/><strong>Note:</strong> Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".' +
-                    '</div>' +
-                    '<div class="cpcell cptoggle">' +
-                        '<input class="textbox" type="text" id="faf-add-username" maxlength="50"></input><br\><br\><input id="faf-add" class="button" type="button" value="Add User" />' +
+            // Beta HTML Code
+            var settingsDisplay = '<div class="container-item-top" style="margin-top: 10px">' +
+                '<h3 id="fa-filter">FA Filter</h3>' +
+                'Hide the things that you dislike!' +
+            '</div>' +
+            '<div class="container-item-bot">' +
+                '<div class="lineitem">' +
+                    '<div class="row">' +
+                        '<div class="cell mobiletoggle">' +
+                            '<strong>Add a User</strong><br/>' +
+                            '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br/><strong>Note:</strong> Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".' +
+                        '</div>' +
+                        '<div class="cell mobiletoggle cptoggle">' +
+                            '<input class="textbox" type="text" id="faf-add-username" maxlength="50" style="margin-bottom:10px"></input><br\><input id="faf-add" class="button" type="button" value="Add User" />' +
+                        '</div>' +
                     '</div>' +
                 '</div>' +
             '</div>' +
-            '<table id="activity-periods-list" class="maintable" width="100%" cellspacing="1" cellpadding="0" border="0">' +
-                '<tbody>' +
-                    '<tr>' +
-                        '<td class="alt1">' +
-                            '<table class="maintable container faf-list" width="100%" cellspacing="1" cellpadding="2" border="0">' +
-                                '<tr><td class="cat" align="left"><b>Username</b></td><td class="cat" width="200px"><b>Submissions</b></td><td class="cat" width="200px"><b>Shouts</b></td><td class="cat" width="200px"><b>Comments</b></td><td class="cat" width="200px"><b>Notifications</b></td></tr>' +
-                            '</table>' +
-                            '<br/><input class="button" id="faf-update" type="button" value="Update Filters"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
-                        '</td>' +
-                    '</tr>' +
-                '</tbody>' +
-            '</table>';
-            $(settingsDisplay).insertAfter('.cplineitem:last');
+            '<div class="maintable rounded">' +
+                '<table class="sessions-list faf-list faf-list-beta" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:0 15px 10px 15px">' +
+                    '<tbody>' +
+                        '<tr>' +
+                            '<td class="p10t p5r p5b"><h3>Username</h3></td>' +
+                            '<td class="p10t p5r p5b" width="200px"><h3>Submissions</h3></td>' +
+                            '<td class="p10t p5r p5b" width="200px"><h3>Shouts</h3></td>' +
+                            '<td class="p10t p5r p5b" width="200px"><h3>Comments</h3></td>' +
+                            '<td class="p10t p5r p5b" width="200px"><h3>Notifications</h3></td>' +
+                        '</tr>' +
+                    '</tbody>' +
+                '</table>' +
+            '</div>' +
+            '<div class="alignleft p10t">' +
+                '<input class="button" id="faf-update" type="button" value="Update Filters"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
+            '</div>';
+            $(settingsDisplay).insertAfter('.container-item-bot-last');
         } else {
-            // HTML Code
+            // Classic HTML Code
             var settingsDisplay = '<table id="fa-filter" cellpadding="0" cellspacing="1" border="0" class="section maintable"><tbody>' +
                 '<tr><td height="22" class="cat links">&nbsp;<strong>FA Filter</strong></td></tr>' +
                 '<tr><td class="alt1 addpad ucp-site-settings" align="center">' +
@@ -299,7 +310,7 @@ function displaySettings() {
                         '<tr>' +
                             '<th class="noborder" style="vertical-align: text-top;"><strong style="position: relative; top: 25px;">Modify Filters</strong></th>' +
                             '<td class="noborder">' +
-                                '<table cellspacing="0" cellpadding="0" border="0" class="faf-list">' +
+                                '<table cellspacing="0" cellpadding="0" border="0" class="faf-list faf-list-classic">' +
                                     '<tr><th><strong>Username</strong></th><th><strong>Submissions</strong></th><th><strong>Shouts</strong></th><th><strong>Comments</strong></th><th><strong>Notifications</strong></th></tr>' +
                                 '</table>' +
                                 '<br><br><input class="button" id="faf-update" type="button" value="Update Filters"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
@@ -324,15 +335,30 @@ function displaySettings() {
 
 // Display user in the filter table
 function addFilterUser(username, data) {
-    var row = '<tr class="checked" id="filter-' + username + '"><td class="noborder"><a class="fa-filter-remove" id="faf-rm-' + username + '" href="#!">[x]</a> ' + username + '</td>';
-    if (data['subs'] === 1) { row += '<td class="noborder"><input id="faf-check-subs-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-subs-' + username + '" type="checkbox"></td>'; }
-    if (data['shouts'] === 1) { row += '<td class="noborder"><input id="faf-check-shouts-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-shouts-' + username + '" type="checkbox"></td>'; }
-    if (data['coms'] === 1) { row += '<td class="noborder"><input id="faf-check-coms-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-coms-' + username + '" type="checkbox"></td>'; }
-    if (data['notifications'] === 1) { row += '<td class="noborder"><input id="faf-check-notifications-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-notifications-' + username + '" type="checkbox"></td>'; }
-    
-    row += '</tr>';
+    // Classic
+    if ($('table.faf-list-classic').length) {
+        
+        var row = '<tr class="checked" id="filter-' + username + '"><td class="noborder"><a class="fa-filter-remove" id="faf-rm-' + username + '" href="#!">[x]</a> ' + username + '</td>';
+        if (data['subs'] === 1) { row += '<td class="noborder"><input id="faf-check-subs-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-subs-' + username + '" type="checkbox"></td>'; }
+        if (data['shouts'] === 1) { row += '<td class="noborder"><input id="faf-check-shouts-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-shouts-' + username + '" type="checkbox"></td>'; }
+        if (data['coms'] === 1) { row += '<td class="noborder"><input id="faf-check-coms-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-coms-' + username + '" type="checkbox"></td>'; }
+        if (data['notifications'] === 1) { row += '<td class="noborder"><input id="faf-check-notifications-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-notifications-' + username + '" type="checkbox"></td>'; }
+        
+        row += '</tr>';
+        
+        $('table.faf-list tr:last').after(row);
+    // Beta
+    } else {
+        var rowBeta = '<tr id="filter-' + username + '"><td class="p5r" valign="middle" width="auto"><a class="fa-filter-remove" id="faf-rm-' + username + '" href="#!">[x]</a> ' + username + '</td>';
+        if (data['subs'] === 1) { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-subs-' + username + '" type="checkbox" checked="checked"></td>'; } else { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-subs-' + username + '" type="checkbox"></td>'; }
+        if (data['shouts'] === 1) { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-shouts-' + username + '" type="checkbox" checked="checked"></td>'; } else { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-shouts-' + username + '" type="checkbox"></td>'; }
+        if (data['coms'] === 1) { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-coms-' + username + '" type="checkbox" checked="checked"></td>'; } else { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-coms-' + username + '" type="checkbox"></td>'; }
+        if (data['notifications'] === 1) { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-notifications-' + username + '" type="checkbox" checked="checked"></td>'; } else { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-notifications-' + username + '" type="checkbox"></td>'; }
 
-    $('table.faf-list tr:last').after(row);
+        rowBeta += '</tr>';
+    
+        $('table.faf-list tr:last').after(rowBeta);
+    }
 }
 
 // Add
