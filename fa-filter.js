@@ -4,7 +4,7 @@
 // @description Filters user-defined content while browsing FA.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.4.0
+// @version     1.4.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -154,8 +154,15 @@ function writeSettings() {
 // Submissions
 function filtersSubs() {
     if ($('.hidden-sub').length > 0) {
-        $display = '<input style="float:right;" id="faf-toggle-subs" class="button" type="button" value="Toggle Filtered Submissions (' + $('.hidden-sub').length + ')"></input>';
-        $('form').first().append($display);
+        // Classic
+        if (!$('li.lileft').length) {
+            $display = '<input style="float:right;" id="faf-toggle-subs" class="button" type="button" value="Toggle Filtered Submissions (' + $('.hidden-sub').length + ')"></input>';
+            $('form').first().append($display);
+        // Beta
+        } else {
+            $display = '<li class="lileft"><a class="top-heading" id="faf-toggle-subs" href="#!"><div class="sprite-nuke menu-space-saver hideonmobile"></div>Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</a></li>';
+            $('.lileft').last().after($display);
+        }
     }
 }
 
@@ -263,16 +270,14 @@ function displaySettings() {
                 '<h3 id="fa-filter">FA Filter</h3>' +
                 'Hide the things that you dislike!' +
             '</div>' +
-            '<div class="container-item-bot">' +
-                '<div class="lineitem">' +
-                    '<div class="row">' +
-                        '<div class="cell mobiletoggle">' +
-                            '<strong>Add a User</strong><br/>' +
-                            '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br/><strong>Note:</strong> Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".' +
-                        '</div>' +
-                        '<div class="cell mobiletoggle cptoggle">' +
-                            '<input class="textbox" type="text" id="faf-add-username" maxlength="50" style="margin-bottom:10px"></input><br\><input id="faf-add" class="button" type="button" value="Add User" />' +
-                        '</div>' +
+            '<div class="container-item-bot2">' +
+                '<strong>Add a User</strong>' +
+                '<div class="control-panel-option">' +
+                    '<div class="control-panel-item-1">' +
+                        '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br/><strong>Note:</strong> Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".' +
+                    '</div>' +
+                    '<div class="control-panel-item-2">' +
+                        '<input class="textbox" type="text" id="faf-add-username" maxlength="50"></input><input id="faf-add" class="button" type="button" value="Add" />' +
                     '</div>' +
                 '</div>' +
             '</div>' +
@@ -290,9 +295,9 @@ function displaySettings() {
                 '</table>' +
             '</div>' +
             '<div class="alignleft p10t">' +
-                '<input class="button" id="faf-update" type="button" value="Update Filters"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
+                '<input class="button mobile-button" id="faf-update" type="button" value="Update Filters (FA Filter)"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
             '</div>';
-            $(settingsDisplay).insertAfter('.container-item-bot-last');
+            $(settingsDisplay).insertAfter($('.container-item-bot2').last());
         } else {
             // Classic HTML Code
             var settingsDisplay = '<table id="fa-filter" cellpadding="0" cellspacing="1" border="0" class="section maintable"><tbody>' +
@@ -338,7 +343,7 @@ function addFilterUser(username, data) {
     // Classic
     if ($('table.faf-list-classic').length) {
         
-        var row = '<tr class="checked" id="filter-' + username + '"><td class="noborder"><a class="fa-filter-remove" id="faf-rm-' + username + '" href="#!">[x]</a> ' + username + '</td>';
+        var row = '<tr class="checked" id="filter-' + username + '"><td class="noborder"><a class="fa-filter-remove fonthighlight" id="faf-rm-' + username + '" href="#!">[x]</a> ' + username + '</td>';
         if (data['subs'] === 1) { row += '<td class="noborder"><input id="faf-check-subs-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-subs-' + username + '" type="checkbox"></td>'; }
         if (data['shouts'] === 1) { row += '<td class="noborder"><input id="faf-check-shouts-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-shouts-' + username + '" type="checkbox"></td>'; }
         if (data['coms'] === 1) { row += '<td class="noborder"><input id="faf-check-coms-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-coms-' + username + '" type="checkbox"></td>'; }
