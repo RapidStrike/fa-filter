@@ -11,6 +11,11 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.5.0</b> (2016-04-03)<br>
+- <u>External filters!</u> Currently, submissions can be filtered outside of the filter page. Others can be filtered externally later.
+- Users can now validate their filters (checks for underscores and removes them). Plus, they can now remove unused filters.
+- Users with multiple periods in their names can now be filtered. Sorry about that!
+
 <b>1.4.1</b> (2016-03-02)<br>
 - Updated beta layout compatibility.
 - Submission filter button is now located near the search bar.
@@ -37,4 +42,8 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 ## To Do
 - [x] Add the option to show hidden contributions.
 - [x] Add the ability to delete hidden notifications.
+- [x] **[EXTERNAL FILTERS]** Submissions
+- [ ] **[EXTERNAL FILTERS]** Comments
+- [ ] **[EXTERNAL FILTERS]** Shouts
+- [ ] **[EXTERNAL FILTERS]** Notifications
 - [x] Add support for the beta layout. (Ongoing)

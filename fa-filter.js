@@ -4,7 +4,7 @@
 // @description Filters user-defined content while browsing FA.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.4.1
+// @version     1.5.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -18,6 +18,9 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 // === INITIALIZE USER ARRAY ===
 var userArray = JSON.parse(GM_getValue('userList', '{}'));
 //var tagArray = JSON.parse(GM_getvalue('tagList', '{}'));
+
+// === GENERAL TEMPORARY VARIABLES ===
+var filterEnabled = {['subs']:true, ['shouts']:true, ['coms']:true, ['notifications']:true};
 
 // === FILTER ===
 var parseSettings = function() {
@@ -61,6 +64,26 @@ function writeSettings() {
         var submission2 = $('b[id^="sid_"] img[src$="#' + username + '"]').closest('b');
         stylizeHidden(submission2);
         submission2.addClass('hidden-sub').hide();
+    
+        // Correspond to UI
+        if (!filterEnabled['subs']) {
+            submission1.show();
+            submission2.show();
+        }
+    }
+
+    function showSubmissions(username) {
+        // Browse/Submissions
+        var submission1 = $('b[id^="sid_"] a[href="/user/' + username + '/"]').closest('b');
+        undoStylize(submission1);
+        // Mark Submissions as Checked
+        submission1.children('small').children('input').prop('checked', false);
+        submission1.removeClass('hidden-sub').show();
+        
+        // Favorites/Front Page
+        var submission2 = $('b[id^="sid_"] img[src$="#' + username + '"]').closest('b');
+        undoStylize(submission2);
+        submission2.removeClass('hidden-sub').show();
     }
 
     // Hide user shouts
@@ -143,16 +166,28 @@ function writeSettings() {
     }
     
     function stylizeHidden(item) {
-        item.css('background-color', '#FFBBBB');
-        item.css('color', '#FF0000');
+        $(item).css('background-color', '#FFBBBB');
+        $(item).css('color', '#FF0000');
         $('a:link', item).css('color', '#FF0000');
         $('a:visited', item).css('color', '#FF0000');
+    }
+
+    function undoStylize(item) {
+        $(item).css('background-color', '');
+        $(item).css('color', '');
+        $('a:link', item).css('color', '');
+        $('a:visited', item).css('color', '');
     }
 
 // === UI ===
 // == Filter Toggle ==
 // Submissions
 function filtersSubs() {
+    // Remove all pre-existing UI
+    $('[id="faf-toggle-subs"]').remove();
+    $('.faf-remove-user-external').parent().remove();
+    $('.faf-add-user-external').parent().remove();
+    
     if ($('.hidden-sub').length > 0) {
         // Classic
         if (!$('li.lileft').length) {
@@ -163,7 +198,22 @@ function filtersSubs() {
             $display = '<li class="lileft"><a class="top-heading" id="faf-toggle-subs" href="#!"><div class="sprite-nuke menu-space-saver hideonmobile"></div>Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</a></li>';
             $('.lileft').last().after($display);
         }
+    } else {
+        filterEnabled['subs'] = true;
     }
+    
+    $userFilterLink = '<a class="faf-add-user-external" id="filter-username" href="#!">Filter</a>';
+    $('b[id^="sid_"]').each(function() {
+        var username = $(this).find('small a').attr('href');
+        username = username.match('/user/(.*)/');
+        if (username) {
+            if (username[1] in userArray && userArray[username[1]]['subs'] === 1) {
+                $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555;" class="faf-remove-user-external" id="faf-' + username[1] + '" href="#!" title="Remove ' + username[1] + ' from filter">[Unfilter]</a></span>');
+            } else {
+                $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555;" class="faf-add-user-external" id="faf-' + username[1] + '" href="#!" title="Add ' + username[1] + ' to filter">[Filter]</a></span>');
+            }
+        }
+    });
 }
 
 // Followed Submissions
@@ -236,26 +286,64 @@ function filtersNotifications() {
     }
 }
 
+// == Buttons ==
 // Show/Hide Submissions
 $(document.body).on('click', '#faf-toggle-subs', function() {
     $('.hidden-sub').toggle();
+    filterEnabled['subs'] = !filterEnabled['subs'];
 });
 
 // Show/Hide Shouts
 $(document.body).on('click', '#faf-toggle-shouts', function() {
     $('.hidden-shout').toggle();
     $('.hidden-shout-br').toggle();
+    filterEnabled['shouts'] = !filterEnabled['shouts'];
 });
 
 // Show/Hide Comments
 $(document.body).on('click', '#faf-toggle-comments', function() {
     $('.hidden-comment').toggle();
-})
+    filterEnabled['coms'] = !filterEnabled['coms'];
+});
 
 // Show/Hide Notifications
 $(document.body).on('click', '#faf-toggle-notifications', function() {
     $('.hidden-notification').toggle();
-})
+    filterEnabled['notifications'] = !filterEnabled['notifications'];
+});
+
+// == External Filters ==
+// Add submission filter outside of settings
+$(document.body).on('click', '.faf-add-user-external', function() {
+    var addUser = $(this).attr('id').match('faf-(.*)')[1];
+    
+    // Add to array
+    if (!(addUser in userArray)) {
+        userArray[addUser] = {'subs':1, 'shouts':0, 'coms':0, 'notifications':0};
+    } else {
+        userArray[addUser]['subs'] = 1;
+    }
+    
+    // Hide, replace link, and save
+    hideSubmissions(addUser);
+    filtersSubs();
+    writeSettings();
+});
+
+// Remove submission filter outside of settings
+$(document.body).on('click', '.faf-remove-user-external', function() {
+    var removeUser = $(this).attr('id').match('faf-(.*)')[1];
+    
+    // Remove from array
+    if (removeUser in userArray) {
+        userArray[removeUser]['subs'] = 0;
+    }
+    
+    // Show, replace link, and save
+    showSubmissions(removeUser);
+    filtersSubs();
+    writeSettings();
+});
 
 // == User Settings ==
 function displaySettings() {
@@ -280,6 +368,19 @@ function displaySettings() {
                         '<input class="textbox" type="text" id="faf-add-username" maxlength="50"></input><input id="faf-add" class="button" type="button" value="Add" />' +
                     '</div>' +
                 '</div>' +
+                '<strong>Validate Filters</strong>' +
+                '<div class="control-panel-option">' +
+                    '<div class="control-panel-item-1">' +
+                        '<p>This double-checks to make sure that your filtered usernames are correct and, optionally, removes users that don\'t have any enabled filters.<br/><strong>Note:</strong> This automatically saves the list.</p>' +
+                    '</div>' +
+                    '<div class="control-panel-item-2">' +
+                        '<select name="faf-validate-options" id="select-faf-validate-options" class="styled">' +
+                            '<option value="v" selected="selected">Vaildate Filters Only</option>' +
+                            '<option value="vr">Validate Filters and Remove Unused Filters</option>' +
+                        '</select><input id="faf-validate" class="button" type="button" value="Apply" /><br/>' +
+                        '<span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>' +
+                    '</div>' +
+                '</div>' +
             '</div>' +
             '<div class="maintable rounded">' +
                 '<table class="sessions-list faf-list faf-list-beta" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:0 15px 10px 15px">' +
@@ -295,7 +396,7 @@ function displaySettings() {
                 '</table>' +
             '</div>' +
             '<div class="alignleft p10t">' +
-                '<input class="button mobile-button" id="faf-update" type="button" value="Update Filters (FA Filter)"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
+                '<input class="button mobile-button" id="faf-update" type="button" value="Apply Filters (FA Filter)"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
             '</div>';
             $(settingsDisplay).insertAfter($('.container-item-bot2').last());
         } else {
@@ -313,12 +414,26 @@ function displaySettings() {
                             '</td>' +
                         '</tr>' +
                         '<tr>' +
+                            '<th><strong>Validate Filters</strong></th>' +
+                            '<td>' +
+                                '<select name="faf-validate-options" id="select-faf-validate-options" class="styled">' +
+                                    '<option value="v" selected="selected">Vaildate Filters Only</option>' +
+                                    '<option value="vr">Validate Filters and Remove Unused Filters</option>' +
+                                '</select>&nbsp;<input id="faf-validate" class="button" type="button" value="Apply" /><br/>' +
+                                '<span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>' +
+                            '</td>' +
+                            '<td class="option-description">' +
+                                '<h3>Clean up everything and revalidate filtered usernames.</h3>' +
+                                '<p>This double-checks to make sure that your filtered usernames are correct and, optionally, removes users that don\'t have any enabled filters.<br/><strong>Note:</strong> This automatically saves the list.</p>' +
+                            '</td>' +
+                        '</tr>' +
+                        '<tr>' +
                             '<th class="noborder" style="vertical-align: text-top;"><strong style="position: relative; top: 25px;">Modify Filters</strong></th>' +
                             '<td class="noborder">' +
                                 '<table cellspacing="0" cellpadding="0" border="0" class="faf-list faf-list-classic">' +
                                     '<tr><th><strong>Username</strong></th><th><strong>Submissions</strong></th><th><strong>Shouts</strong></th><th><strong>Comments</strong></th><th><strong>Notifications</strong></th></tr>' +
                                 '</table>' +
-                                '<br><br><input class="button" id="faf-update" type="button" value="Update Filters"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
+                                '<br><br><input class="button" id="faf-update" type="button" value="Apply Filters (FA Filter)"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
                             '</td>' +
                             '<td class="option-description noborder">' +
                                 '<h3>Choose what items you don\'t want to see.</h3>' +
@@ -372,6 +487,7 @@ $(document.body).on('click', '#faf-add', function() {
     $('#faf-add-username').val('');
     if (username !== '') {
         username = username.toLowerCase();
+        username = username.replace(/[_]/g, '');
         if (!(username in userArray)) {
             userArray[username] = {'subs':1, 'shouts':1, 'coms':1, 'notifications':1};
             addFilterUser(username, userArray[username]);
@@ -385,8 +501,8 @@ $(document.body).on('click', 'a.fa-filter-remove', function(event) {
     delete userArray[username];
     
     // Replace periods/colons with escaped versions. Who the fuck allows periods in usernames, seriously?
-    userEsc = username.replace(/\./, '\\.');
-    userEsc = userEsc.replace(/:/, '\:');
+    userEsc = username.replace(/\./g, '\\.');
+    userEsc = userEsc.replace(/:/g, '\:');
     
     console.log(userEsc)
     $('table.faf-list tr#filter-' + userEsc).remove();
@@ -399,8 +515,8 @@ $(document.body).on('click', '#faf-update', function() {
         var vals = {'subs':0, 'shouts':0, 'coms':0, 'notifications':0};
         
         // Replace periods/colons with escaped versions. Who the fuck allows periods in usernames, seriously?
-        userEsc = username.replace(/\./, '\\.');
-        userEsc = userEsc.replace(/:/, '\:');
+        userEsc = username.replace(/\./g, '\\.');
+        userEsc = userEsc.replace(/:/g, '\:');
         
         // Check checkboxes
         if ($('#faf-check-subs-' + userEsc).is(':checked')) { vals['subs'] = 1; }
@@ -421,13 +537,61 @@ $(document.body).on('click', '#faf-update', function() {
     }, 5000);
 });
 
+// Validate
+$(document.body).on('click', '#faf-validate', function() {
+    var modCount = 0;
+    // Validate
+    $.each(userArray, function(username, data) {
+        var tempUsername = username;
+        tempUsername = tempUsername.trim();
+        if (tempUsername !== '') {
+            tempUsername = tempUsername.toLowerCase();
+            tempUsername = tempUsername.replace(/[_]/g, '');
+            if (tempUsername !== username) {
+                userArray[tempUsername] = data;
+                delete userArray[username];
+                $('tr[id="filter-' + username + '"]').remove();
+                modCount++;
+            }
+        }
+    });
+    
+    // Remove empty
+    if ($('#select-faf-validate-options').val() === 'vr') {
+        $.each(userArray, function(username, data) {
+            var isEmpty = true;
+            $.each(data, function(entity, value) {
+                if (value === 1) {
+                    isEmpty = false;
+                }
+            });
+            if (isEmpty) {
+                delete userArray[username];
+                $('tr[id="filter-' + username + '"]').remove();
+                modCount++;
+            }
+        });
+    }
+    
+    // Save
+    writeSettings();
+    
+    // Display message
+    $('.faf-validate-status').text('Validated! ' + modCount + ' user(s) have been modified or removed.');
+    $('.faf-validate-status').fadeIn('slow');
+    setTimeout(function() {
+        $('.faf-validate-status').fadeOut('slow');
+    }, 5000);
+});
+
 displaySettings();
 
 setTimeout(parseSettings, 50);
 //setTimeout(parseTagSettings, 100);
 
 // Submissions
-if (window.location.pathname.lastIndexOf('/browse', 0) === 0) setTimeout(filtersSubs, 100);
+if (window.location.pathname.lastIndexOf('/', 0) === 0) setTimeout(filtersSubs, 100);
+else if (window.location.pathname.lastIndexOf('/browse', 0) === 0) setTimeout(filtersSubs, 100);
 else if (window.location.pathname.lastIndexOf('/favorites', 0) === 0) setTimeout(filtersSubs, 100);
 else if (window.location.pathname.lastIndexOf('/msg/submissions', 0) === 0) setTimeout(filtersSubsFollow, 100);
 // Shouts
