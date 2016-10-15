@@ -11,6 +11,10 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.5.1</b> (2016-10-15)<br>
+- Updated beta layout compatibility.
+- Cleaned up code a little bit.
+
 <b>1.5.0</b> (2016-04-03)<br>
 - <u>External filters!</u> Currently, submissions can be filtered outside of the filter page. Others can be filtered externally later.
 - Users can now validate their filters (checks for underscores and removes them). Plus, they can now remove unused filters.
