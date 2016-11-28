@@ -11,6 +11,9 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.5.2</b> (2016-11-27)<br>
+- Updated beta layout compatibility. Can someone explain why they changed some, but not all, of their element classes to have underscores? Because that's terrible.
+
 <b>1.5.1</b> (2016-10-15)<br>
 - Updated beta layout compatibility.
 - Cleaned up code a little bit.

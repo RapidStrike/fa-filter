@@ -4,7 +4,7 @@
 // @description Filters user-defined content while browsing FA.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.5.1
+// @version     1.5.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -53,32 +53,56 @@ function writeSettings() {
 // === FUNCTIONS ===
     // Hide user submissions
     function hideSubmissions(username) {
-        // Browse/Submissions
-        var submission1 = $('b[id^="sid_"] a[href="/user/' + username + '/"]').closest('b');
-        stylizeHidden(submission1);
-        // Mark Submissions as Checked
-        submission1.children('small').children('input').prop('checked', true);
-        submission1.addClass('hidden-sub').hide();
+        if ($('figure').length) {
+            // Beta
+            var submissionBeta = $('figure .u-' + username);
+            var submissionInboxBeta = $('a[href^="/user/' + username + '"]').closest('figure');
 
-        // Favorites/Front Page
-        var submission2 = $('b[id^="sid_"] img[src$="#' + username + '"]').closest('b');
-        stylizeHidden(submission2);
-        submission2.addClass('hidden-sub').hide();
+            stylizeHidden(submissionBeta);
+            stylizeHidden(submissionInboxBeta);
 
-        // Correspond to UI
-        if (!filterEnabled['subs']) {
-            submission1.show();
-            submission2.show();
+            submissionBeta.addClass('hidden-sub').hide();
+            submissionInboxBeta.find('input').prop('checked', true);
+            submissionInboxBeta.addClass('hidden-sub').hide();
+
+            if (!filterEnabled['subs']) {
+                submissionBeta.show();
+                submissionInboxBeta.show();
+            }
+        } else {
+            // Classic
+            // Browse/Submissions
+            var submission1 = $('b[id^="sid_"] a[href="/user/' + username + '/"]').closest('b');
+            stylizeHidden(submission1);
+            // Mark Submissions as Checked
+            submission1.children('small').children('input').prop('checked', true);
+            submission1.addClass('hidden-sub').hide();
+
+            // Favorites/Front Page
+            var submission2 = $('b[id^="sid_"] img[src$="#' + username + '"]').closest('b');
+            stylizeHidden(submission2);
+            submission2.addClass('hidden-sub').hide();
+
+            // Correspond to UI
+            if (!filterEnabled['subs']) {
+                submission1.show();
+                submission2.show();
+            }
         }
     }
 
     function showSubmissions(username) {
         // Browse/Submissions
         var submission1 = $('b[id^="sid_"] a[href="/user/' + username + '/"]').closest('b');
+        var submissionBeta = $('figure .u-' + username);
+        var submissionInboxBeta = $('a[href^="/user/' + username + '"]').closest('figure');
         undoStylize(submission1);
+        undoStylize(submissionBeta);
+        undoStylize(submissionInboxBeta);
         // Mark Submissions as Checked
         submission1.children('small').children('input').prop('checked', false);
         submission1.removeClass('hidden-sub').show();
+        submission1beta.removeClass('hidden-sub').show();
 
         // Favorites/Front Page
         var submission2 = $('b[id^="sid_"] img[src$="#' + username + '"]').closest('b');
@@ -95,9 +119,17 @@ function writeSettings() {
         shout.next('br').addClass('hidden-shout-br').hide();
 
         // Beta
-        var shoutBeta = $('table[id^="shout-"] .comments-flex-item-icon img[alt="' + username +'"]').closest('table[id^="shout-"]');
+        var shoutBeta = $('.comment_container .shout-avatar img[alt="' + username +'"]').closest('.comment_container');
         shoutBeta.addClass('hidden-shout').hide();
-        stylizeHidden(shoutBeta.find('.comments-flex-item-main'));
+        stylizeHidden(shoutBeta.find('.header'));
+        stylizeHidden(shoutBeta.find('.body'));
+
+        // We want to only highlight and check
+        var shoutManageBeta = $('table[id^="shout-"] .comments-flex-item-icon img[alt="' + username +'"]').closest('table[id^="shout-"]');
+        shoutManageBeta.addClass('hidden-shout');
+        stylizeHidden(shoutManageBeta.find('.comments-userline-flex'));
+        stylizeHidden(shoutManageBeta.find('.comment_text'));
+        shoutManageBeta.find('input[type="checkbox"]').prop('checked', true);
     }
 
     // Hide user comments and threads
@@ -128,21 +160,26 @@ function writeSettings() {
         });
 
         // Beta
-        var commentsBeta = $('.container-comment .comments-flex-item-icon img[alt="' + username + '"]').closest('.container-comment');
-        stylizeHidden(commentsBeta.find('.comments-flex-item-main'));
+        var commentsBeta = $('.comment_container .avatar img[alt="' + username + '"]').closest('.comment_container');
+        stylizeHidden(commentsBeta.find('.header'));
+        stylizeHidden(commentsBeta.find('.body'));
 
         $(commentsBeta).each(function() {
-            // Hide comment and get width
+            // Get width, then hide comment
             if (!($(this).hasClass('hidden-comment'))) {
-                var width = Number($(this).addClass('hidden-comment').hide().attr('width').slice(0,-1));
-                var current = $(this).next('.container-comment');
+                var width = $(this).width();
+                var current = $(this).next('.comment_container');
+
+                $(this).addClass('hidden-comment').hide();
 
                 // Iterate through the comments until there's a width that is greater than or equal
                 while (true) {
+                    console.log(current);
+                    console.log(width + ' vs ' + current.width());
                     if (current.length) {
-                        if (Number(current.attr('width').slice(0,-1)) < width) {
+                        if (current.width() < width) {
                             current.addClass('hidden-comment').hide();
-                            current = current.next('.container-comment');
+                            current = current.next('.comment_container');
                         } else {
                             break;
                         }
@@ -183,7 +220,7 @@ function writeSettings() {
 // == Filter Toggle ==
 // Submissions
 function filtersSubs() {
-    // Remove all pre-existing UI
+    // Remove all pre-existing UI for soft-refresh
     $('[id="faf-toggle-subs"]').remove();
     $('.faf-remove-user-external').parent().remove();
     $('.faf-add-user-external').parent().remove();
@@ -202,24 +239,43 @@ function filtersSubs() {
         filterEnabled['subs'] = true;
     }
 
-    $userFilterLink = '<a class="faf-add-user-external" id="filter-username" href="#!">Filter</a>';
-    $('b[id^="sid_"]').each(function() {
-        var username = $(this).find('small a').attr('href');
-        username = username.match('/user/(.*)/');
-        if (username) {
-            if (username[1] in userArray && userArray[username[1]]['subs'] === 1) {
-                $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555;" class="faf-remove-user-external" id="faf-' + username[1] + '" href="#!" title="Remove ' + username[1] + ' from filter">[Unfilter]</a></span>');
-            } else {
-                $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555;" class="faf-add-user-external" id="faf-' + username[1] + '" href="#!" title="Add ' + username[1] + ' to filter">[Filter]</a></span>');
+    if ($('figure').length) {
+        // Beta
+        $('figure').each(function() {
+            var username = $(this).attr('class').match('u-([a-z.0-9-]+)')[1];
+            if (username) {
+                if (username in userArray && userArray[username]['subs'] === 1) {
+                    $(this).find('figcaption').append('<p><a style="color: #FF5555;" class="faf-remove-user-external" id="faf-' + username + '" href="#!" title="Remove ' + username + ' from filter">[Unfilter]</a></p>');
+                } else {
+                    $(this).find('figcaption').append('<p><a style="color: #FF5555;" class="faf-add-user-external" id="faf-' + username + '" href="#!" title="Add ' + username + ' to filter">[Filter]</a></p>');
+                }
             }
-        }
-    });
+        });
+    } else {
+        $('b[id^="sid_"]').each(function() {
+            var username = $(this).find('small a').attr('href');
+            username = username.match('/user/(.*)/');
+            if (username) {
+                if (username[1] in userArray && userArray[username[1]]['subs'] === 1) {
+                    $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555;" class="faf-remove-user-external" id="faf-' + username[1] + '" href="#!" title="Remove ' + username[1] + ' from filter">[Unfilter]</a></span>');
+                } else {
+                    $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555;" class="faf-add-user-external" id="faf-' + username[1] + '" href="#!" title="Add ' + username[1] + ' to filter">[Filter]</a></span>');
+                }
+            }
+        });
+    }
 }
 
 // Followed Submissions
 function filtersSubsFollow() {
     if ($('.hidden-sub').length > 0) {
-        $display = '<input id="faf-toggle-subs" class="button" type="button" value="Toggle Filtered Submissions (' + $('.hidden-sub').length + ')"></input>';
+        // Beta
+        if ($('.button-nav-item').length) {
+            $display = '<div class="button-nav-item"><button class="button mobile-button" id="faf-toggle-subs" type="button">Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</button></div>';
+            $('.actions').css('max-width', '700px');
+        } else {
+            $display = '<input id="faf-toggle-subs" class="button" type="button" value="Toggle Filtered Submissions (' + $('.hidden-sub').length + ')"></input>';
+        }
         $('.actions').append($display);
     }
 }
@@ -238,8 +294,8 @@ function filtersShouts() {
 // Shouts (Controls, Beta Only)
 function filtersShoutsControl() {
     if ($('.hidden-shout').length > 0) {
-        $display = '<div class="button-nav-item"><button id="faf-toggle-shouts" class="button mobile-button" type="button" value="Toggle Filtered Shouts (' + $('.hidden-shout').length + ')">Toggle Filtered Shouts (' + $('.hidden-shout').length + ')</input></div>';
-        $('.button-nav').append($display);
+        $display = '<button id="faf-toggle-shouts" class="button mobile-button" type="button" value="Toggle Filtered Shouts (' + $('.hidden-shout').length + ')">Toggle Filtered Shouts (' + $('.hidden-shout').length + ')</button>';
+        $('.section-divider').last().append($display);
         $('.hidden-shout input').prop('checked', true);
     }
 }
@@ -263,6 +319,7 @@ function filtersNotifications() {
     if ($('.hidden-notification').length > 0) {
         $display = '<input id="faf-toggle-notifications" class="button" type="button" value="Toggle Filtered Notifications (' + $('.hidden-notification').length + ')"></input>';
         $('.global-controls').append($display);
+        $('.global_controls').append($display);
 
         // = Notification Count =
         // Classic
@@ -277,15 +334,15 @@ function filtersNotifications() {
 
         // Beta
         if ($('div[id^="messages-watches"] .hidden-notification').length > 0)
-            $('div[id^="messages-watches"]').prev().find('h3').append(' (' + $('div[id^="messages-watches"] .hidden-notification').length + ' filtered)');
+            $('div[id^="messages-watches"] h2').append(' (' + $('div[id^="messages-watches"] .hidden-notification').length + ' filtered)');
         if ($('div[id^="messages-comments-submission"] .hidden-notification').length > 0)
-            $('div[id^="messages-comments-submission"]').prev().find('h3').append(' (' + $('div[id^="messages-comments-submission"] .hidden-notification').length + ' filtered)');
+            $('div[id^="messages-comments-submission"] h2').append(' (' + $('div[id^="messages-comments-submission"] .hidden-notification').length + ' filtered)');
         if ($('div[id^="messages-shouts"] .hidden-notification').length > 0)
-            $('div[id^="messages-shouts"]').prev().find('h3').append(' (' + $('div[id^="messages-shouts"] .hidden-notification').length + ' filtered)');
+            $('div[id^="messages-shouts"] h2').append(' (' + $('div[id^="messages-shouts"] .hidden-notification').length + ' filtered)');
         if ($('div[id^="messages-favorites"] .hidden-notification').length > 0)
-            $('div[id^="messages-favorites"]').prev().find('h3').append(' (' + $('div[id^="messages-favorites"] .hidden-notification').length + ' filtered)');
+            $('div[id^="messages-favorites"] h2').append(' (' + $('div[id^="messages-favorites"] .hidden-notification').length + ' filtered)');
         if ($('div[id^="messages-journals"] .hidden-notification').length > 0)
-            $('div[id^="messages-journals"]').prev().find('h3').append(' (' + $('div[id^="messages-journals"] .hidden-notification').length + ' filtered)');
+            $('div[id^="messages-journals"] h2').append(' (' + $('div[id^="messages-journals"] .hidden-notification').length + ' filtered)');
     }
 }
 
@@ -359,16 +416,16 @@ function displaySettings() {
             // Beta HTML Code
             var settingsDisplay = '<div class="section-divider">' +
                 '<h2 id="fa-filter">FA Filter</h2>' +
-                '<strong>Add a User</strong>' +
+                '<h4>Add a User</h4>' +
                 '<div class="control-panel-option">' +
                     '<div class="control-panel-item-1">' +
                         '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br/><strong>Note:</strong> Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".' +
                     '</div>' +
                     '<div class="control-panel-item-2">' +
-                        '<input class="textbox" type="text" id="faf-add-username" maxlength="50"></input><input id="faf-add" class="button" type="button" value="Add" />' +
+                        '<input class="textbox" type="text" id="faf-add-username" maxlength="50"></input>&nbsp;<input id="faf-add" class="button" type="button" value="Add" />' +
                     '</div>' +
                 '</div>' +
-                '<strong>Validate Filters</strong>' +
+                '<h4>Validate Filters</h4>' +
                 '<div class="control-panel-option">' +
                     '<div class="control-panel-item-1">' +
                         '<p>This double-checks to make sure that your filtered usernames are correct and, optionally, removes users that don\'t have any enabled filters.<br/><strong>Note:</strong> This automatically saves the list.</p>' +
@@ -376,27 +433,27 @@ function displaySettings() {
                     '<div class="control-panel-item-2">' +
                         '<select name="faf-validate-options" id="select-faf-validate-options" class="styled">' +
                             '<option value="v" selected="selected">Vaildate Filters Only</option>' +
-                            '<option value="vr">Validate Filters and Remove Unused Filters</option>' +
+                            '<option value="vr">Validate and Remove Unused Filters</option>' +
                         '</select><input id="faf-validate" class="button" type="button" value="Apply" /><br/>' +
                         '<span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>' +
                     '</div>' +
                 '</div>' +
-            '</div>' +
-            '<div class="maintable rounded">' +
-                '<table class="sessions-list faf-list faf-list-beta" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:0 15px 10px 15px">' +
-                    '<tbody>' +
-                        '<tr>' +
-                            '<td class="p10t p5r p5b"><h3>Username</h3></td>' +
-                            '<td class="p10t p5r p5b" width="200px"><h3>Submissions</h3></td>' +
-                            '<td class="p10t p5r p5b" width="200px"><h3>Shouts</h3></td>' +
-                            '<td class="p10t p5r p5b" width="200px"><h3>Comments</h3></td>' +
-                            '<td class="p10t p5r p5b" width="200px"><h3>Notifications</h3></td>' +
-                        '</tr>' +
-                    '</tbody>' +
-                '</table>' +
-            '</div>' +
-            '<div class="section-divider">' +
-                '<input class="button mobile-button" id="faf-update" type="button" value="Apply Filters (FA Filter)"> <center><span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span></center>' +
+                '<div class="maintable rounded">' +
+                    '<table class="sessions-list faf-list faf-list-beta" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:0 15px 10px 15px">' +
+                        '<tbody>' +
+                            '<tr>' +
+                                '<td class="p10t p5r p5b"><h3>Username</h3></td>' +
+                                '<td class="p10t p5r p5b" width="200px"><h3>Submissions</h3></td>' +
+                                '<td class="p10t p5r p5b" width="200px"><h3>Shouts</h3></td>' +
+                                '<td class="p10t p5r p5b" width="200px"><h3>Comments</h3></td>' +
+                                '<td class="p10t p5r p5b" width="200px"><h3>Notifications</h3></td>' +
+                            '</tr>' +
+                        '</tbody>' +
+                    '</table>' +
+                '</div>' +
+                '<div class="p20 alignright">' +
+                    '<input class="button mobile-button" id="faf-update" type="button" value="Apply Filters (FA Filter)"> <center><span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span></center>' +
+                '</div>' +
             '</div>';
             $(settingsDisplay).insertBefore($('.section-divider').last());
         } else {
@@ -418,7 +475,7 @@ function displaySettings() {
                             '<td>' +
                                 '<select name="faf-validate-options" id="select-faf-validate-options" class="styled">' +
                                     '<option value="v" selected="selected">Vaildate Filters Only</option>' +
-                                    '<option value="vr">Validate Filters and Remove Unused Filters</option>' +
+                                    '<option value="vr">Validate and Remove Unused Filters</option>' +
                                 '</select>&nbsp;<input id="faf-validate" class="button" type="button" value="Apply" /><br/>' +
                                 '<span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>' +
                             '</td>' +
