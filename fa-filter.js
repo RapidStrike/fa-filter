@@ -176,8 +176,6 @@ function writeSettings() {
 
                 // Iterate through the comments until there's a width that is greater than or equal
                 while (true) {
-                    console.log(current);
-                    console.log(width + ' vs ' + current.width());
                     if (current.length) {
                         if (current.width() < width) {
                             current.addClass('hidden-comment').hide();
@@ -561,7 +559,6 @@ $(document.body).on('click', 'a.fa-filter-remove', function(event) {
 
     userEsc = escapeUsername(username);
 
-    console.log(userEsc);
     $('table.faf-list tr#filter-' + userEsc).remove();
 });
 
@@ -652,7 +649,7 @@ displaySettings();
 
 setTimeout(parseSettings, 50);
 //setTimeout(parseTagSettings, 100);
-console.log(userArray);
+
 // Submissions
 if (window.location.pathname.lastIndexOf('/browse', 0) === 0) setTimeout(filtersSubs, 100);
 else if (window.location.pathname.lastIndexOf('/favorites', 0) === 0) setTimeout(filtersSubs, 100);
