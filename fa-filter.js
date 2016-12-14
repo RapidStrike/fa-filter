@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name        FA Content Filter
 // @namespace   fa-filter
-// @description Filters user-defined content while browsing FA.
+// @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.5.2
+// @version     1.5.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -55,8 +55,8 @@ function writeSettings() {
     function hideSubmissions(username) {
         if ($('figure').length) {
             // Beta
-            var submissionBeta = $('figure .u-' + username);
-            var submissionInboxBeta = $('a[href^="/user/' + username + '"]').closest('figure');
+            var submissionBeta = $('figure.u-' + escapeUsername(username));
+            var submissionInboxBeta = $('a[href="/user/' + username + '"]').closest('figure');
 
             stylizeHidden(submissionBeta);
             stylizeHidden(submissionInboxBeta);
@@ -94,7 +94,7 @@ function writeSettings() {
     function showSubmissions(username) {
         // Browse/Submissions
         var submission1 = $('b[id^="sid_"] a[href="/user/' + username + '/"]').closest('b');
-        var submissionBeta = $('figure .u-' + username);
+        var submissionBeta = $('figure.u-' + escapeUsername(username));
         var submissionInboxBeta = $('a[href^="/user/' + username + '"]').closest('figure');
         undoStylize(submission1);
         undoStylize(submissionBeta);
@@ -102,7 +102,9 @@ function writeSettings() {
         // Mark Submissions as Checked
         submission1.children('small').children('input').prop('checked', false);
         submission1.removeClass('hidden-sub').show();
-        submission1beta.removeClass('hidden-sub').show();
+        submissionBeta.removeClass('hidden-sub').show();
+        submissionInboxBeta.removeClass('hidden-sub').show();
+        submissionInboxBeta.find('input').prop('checked', false);
 
         // Favorites/Front Page
         var submission2 = $('b[id^="sid_"] img[src$="#' + username + '"]').closest('b');
@@ -242,7 +244,7 @@ function filtersSubs() {
     if ($('figure').length) {
         // Beta
         $('figure').each(function() {
-            var username = $(this).attr('class').match('u-([a-z.0-9-]+)')[1];
+            var username = $(this).attr('class').match('u-([^\\s]+)')[1];
             if (username) {
                 if (username in userArray && userArray[username]['subs'] === 1) {
                     $(this).find('figcaption').append('<p><a style="color: #FF5555;" class="faf-remove-user-external" id="faf-' + username + '" href="#!" title="Remove ' + username + ' from filter">[Unfilter]</a></p>');
@@ -557,9 +559,7 @@ $(document.body).on('click', 'a.fa-filter-remove', function(event) {
     var username = event.target.id.substr(7);
     delete userArray[username];
 
-    // Replace periods/colons with escaped versions. Who the fuck allows periods in usernames, seriously?
-    userEsc = username.replace(/\./g, '\\.');
-    userEsc = userEsc.replace(/:/g, '\:');
+    userEsc = escapeUsername(username);
 
     console.log(userEsc);
     $('table.faf-list tr#filter-' + userEsc).remove();
@@ -571,9 +571,7 @@ $(document.body).on('click', '#faf-update', function() {
         var username = this.id.substr(7);
         var vals = {'subs':0, 'shouts':0, 'coms':0, 'notifications':0};
 
-        // Replace periods/colons with escaped versions. Who the fuck allows periods in usernames, seriously?
-        userEsc = username.replace(/\./g, '\\.');
-        userEsc = userEsc.replace(/:/g, '\:');
+        userEsc = escapeUsername(username);
 
         // Check checkboxes
         if ($('#faf-check-subs-' + userEsc).is(':checked')) { vals['subs'] = 1; }
@@ -603,7 +601,7 @@ $(document.body).on('click', '#faf-validate', function() {
         tempUsername = tempUsername.trim();
         if (tempUsername !== '') {
             tempUsername = tempUsername.toLowerCase();
-            tempUsername = tempUsername.replace(/[_]/g, '');
+            tempUsername = tempUsername.replace(/[_ ]/g, '');
             if (tempUsername !== username) {
                 userArray[tempUsername] = data;
                 delete userArray[username];
@@ -641,11 +639,20 @@ $(document.body).on('click', '#faf-validate', function() {
     }, 5000);
 });
 
+// === UTILITIES ===
+function escapeUsername(username) {
+    // Replace periods/colons/tildes with escaped versions. Who the fuck allows periods AND tildes in usernames, seriously?
+    userEsc = username.replace(/\./g, '\\.');
+    userEsc = userEsc.replace(/:/g, '\\:');
+    userEsc = userEsc.replace(/~/g, '\\~');
+    return userEsc;
+}
+
 displaySettings();
 
 setTimeout(parseSettings, 50);
 //setTimeout(parseTagSettings, 100);
-
+console.log(userArray);
 // Submissions
 if (window.location.pathname.lastIndexOf('/browse', 0) === 0) setTimeout(filtersSubs, 100);
 else if (window.location.pathname.lastIndexOf('/favorites', 0) === 0) setTimeout(filtersSubs, 100);

@@ -11,6 +11,10 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.5.3</b> (2016-12-13)<br>
+- Fixed a bug where other users would get filtered due to similar names.
+- Names with tildes and periods are now correctly filtered.
+
 <b>1.5.2</b> (2016-11-27)<br>
 - Updated beta layout compatibility. Can someone explain why they changed some, but not all, of their element classes to have underscores? Because that's terrible.
 
