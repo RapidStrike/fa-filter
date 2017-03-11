@@ -11,6 +11,10 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.5.4</b> (2017-03-10)<br>
+- Updated beta layout compatibility.
+- Increased height of submissions in order to fit the Filter button.
+
 <b>1.5.3</b> (2016-12-13)<br>
 - Fixed a bug where other users would get filtered due to similar names.
 - Names with tildes and periods are now correctly filtered.

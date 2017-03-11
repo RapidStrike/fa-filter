@@ -245,9 +245,9 @@ function filtersSubs() {
             var username = $(this).attr('class').match('u-([^\\s]+)')[1];
             if (username) {
                 if (username in userArray && userArray[username]['subs'] === 1) {
-                    $(this).find('figcaption').append('<p><a style="color: #FF5555;" class="faf-remove-user-external" id="faf-' + username + '" href="#!" title="Remove ' + username + ' from filter">[Unfilter]</a></p>');
+                    $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-remove-user-external" id="faf-' + username + '" href="#!" title="Remove ' + username + ' from filter">[Unfilter]</a></p>');
                 } else {
-                    $(this).find('figcaption').append('<p><a style="color: #FF5555;" class="faf-add-user-external" id="faf-' + username + '" href="#!" title="Add ' + username + ' to filter">[Filter]</a></p>');
+                    $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-add-user-external" id="faf-' + username + '" href="#!" title="Add ' + username + ' to filter">[Filter]</a></p>');
                 }
             }
         });
@@ -257,9 +257,9 @@ function filtersSubs() {
             username = username.match('/user/(.*)/');
             if (username) {
                 if (username[1] in userArray && userArray[username[1]]['subs'] === 1) {
-                    $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555;" class="faf-remove-user-external" id="faf-' + username[1] + '" href="#!" title="Remove ' + username[1] + ' from filter">[Unfilter]</a></span>');
+                    $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-remove-user-external" id="faf-' + username[1] + '" href="#!" title="Remove ' + username[1] + ' from filter">[Unfilter]</a></span>');
                 } else {
-                    $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555;" class="faf-add-user-external" id="faf-' + username[1] + '" href="#!" title="Add ' + username[1] + ' to filter">[Filter]</a></span>');
+                    $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-add-user-external" id="faf-' + username[1] + '" href="#!" title="Add ' + username[1] + ' to filter">[Filter]</a></span>');
                 }
             }
         });
@@ -414,48 +414,50 @@ function displaySettings() {
         // Brute forced, but there are no tables in the beta layout site-settings page. This is one of the major differences.
         if (!$('table').length) {
             // Beta HTML Code
-            var settingsDisplay = '<div class="section-divider">' +
-                '<h2 id="fa-filter">FA Filter</h2>' +
-                '<h4>Add a User</h4>' +
-                '<div class="control-panel-option">' +
-                    '<div class="control-panel-item-1">' +
-                        '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br/><strong>Note:</strong> Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".' +
+            var settingsDisplay = '<section>' +
+                '<div class="section-body">' +
+                    '<h2 id="fa-filter">FA Filter</h2>' +
+                    '<h4>Add a User</h4>' +
+                    '<div class="control-panel-option">' +
+                        '<div class="control-panel-item-1">' +
+                            '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br/><strong>Note:</strong> Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".' +
+                        '</div>' +
+                        '<div class="control-panel-item-2">' +
+                            '<input class="textbox" type="text" id="faf-add-username" maxlength="50"></input>&nbsp;<input id="faf-add" class="button" type="button" value="Add" />' +
+                        '</div>' +
                     '</div>' +
-                    '<div class="control-panel-item-2">' +
-                        '<input class="textbox" type="text" id="faf-add-username" maxlength="50"></input>&nbsp;<input id="faf-add" class="button" type="button" value="Add" />' +
+                    '<h4>Validate Filters</h4>' +
+                    '<div class="control-panel-option">' +
+                        '<div class="control-panel-item-1">' +
+                            '<p>This double-checks to make sure that your filtered usernames are correct and, optionally, removes users that don\'t have any enabled filters.<br/><strong>Note:</strong> This automatically saves the list.</p>' +
+                        '</div>' +
+                        '<div class="control-panel-item-2">' +
+                            '<select name="faf-validate-options" id="select-faf-validate-options" class="styled">' +
+                                '<option value="v" selected="selected">Vaildate Filters Only</option>' +
+                                '<option value="vr">Validate and Remove Unused Filters</option>' +
+                            '</select><input id="faf-validate" class="button" type="button" value="Apply" /><br/>' +
+                            '<span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="maintable rounded">' +
+                        '<table class="sessions-list faf-list faf-list-beta" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:0 15px 10px 15px">' +
+                            '<tbody>' +
+                                '<tr>' +
+                                    '<td class="p10t p5r p5b"><h3>Username</h3></td>' +
+                                    '<td class="p10t p5r p5b" width="200px"><h3>Submissions</h3></td>' +
+                                    '<td class="p10t p5r p5b" width="200px"><h3>Shouts</h3></td>' +
+                                    '<td class="p10t p5r p5b" width="200px"><h3>Comments</h3></td>' +
+                                    '<td class="p10t p5r p5b" width="200px"><h3>Notifications</h3></td>' +
+                                '</tr>' +
+                            '</tbody>' +
+                        '</table>' +
                     '</div>' +
                 '</div>' +
-                '<h4>Validate Filters</h4>' +
-                '<div class="control-panel-option">' +
-                    '<div class="control-panel-item-1">' +
-                        '<p>This double-checks to make sure that your filtered usernames are correct and, optionally, removes users that don\'t have any enabled filters.<br/><strong>Note:</strong> This automatically saves the list.</p>' +
-                    '</div>' +
-                    '<div class="control-panel-item-2">' +
-                        '<select name="faf-validate-options" id="select-faf-validate-options" class="styled">' +
-                            '<option value="v" selected="selected">Vaildate Filters Only</option>' +
-                            '<option value="vr">Validate and Remove Unused Filters</option>' +
-                        '</select><input id="faf-validate" class="button" type="button" value="Apply" /><br/>' +
-                        '<span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>' +
-                    '</div>' +
+                '<div class="section-footer alignright">' +
+                    '<span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>&nbsp;&nbsp;<input class="button mobile-button" id="faf-update" type="button" value="Apply Filters (FA Filter)">' +
                 '</div>' +
-                '<div class="maintable rounded">' +
-                    '<table class="sessions-list faf-list faf-list-beta" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:0 15px 10px 15px">' +
-                        '<tbody>' +
-                            '<tr>' +
-                                '<td class="p10t p5r p5b"><h3>Username</h3></td>' +
-                                '<td class="p10t p5r p5b" width="200px"><h3>Submissions</h3></td>' +
-                                '<td class="p10t p5r p5b" width="200px"><h3>Shouts</h3></td>' +
-                                '<td class="p10t p5r p5b" width="200px"><h3>Comments</h3></td>' +
-                                '<td class="p10t p5r p5b" width="200px"><h3>Notifications</h3></td>' +
-                            '</tr>' +
-                        '</tbody>' +
-                    '</table>' +
-                '</div>' +
-                '<div class="p20 alignright">' +
-                    '<input class="button mobile-button" id="faf-update" type="button" value="Apply Filters (FA Filter)"> <center><span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span></center>' +
-                '</div>' +
-            '</div>';
-            $(settingsDisplay).insertBefore($('.section-divider').last());
+            '</section>';
+            $(settingsDisplay).insertBefore($('section').last());
         } else {
             // Classic HTML Code
             var settingsDisplay = '<table id="fa-filter" cellpadding="0" cellspacing="1" border="0" class="section maintable"><tbody>' +
@@ -645,7 +647,15 @@ function escapeUsername(username) {
     return userEsc;
 }
 
+function updateCSS() {
+    var newCSS = '<style type="text/css">' +
+            'section.gallery figure { padding-bottom: 62px; }' +
+        '</style>';
+    $('head').append(newCSS);
+}
+
 displaySettings();
+updateCSS();
 
 setTimeout(parseSettings, 50);
 //setTimeout(parseTagSettings, 100);
