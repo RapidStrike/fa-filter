@@ -4,20 +4,22 @@
 // @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.5.4
-// @grant       GM_getValue
-// @grant       GM_setValue
-// @grant       GM_deleteValue
-// @grant       GM_openInTab
+// @version     1.5.5
+// @grant       GM.getValue
+// @grant       GM.setValue
+// @grant       GM.deleteValue
+// @grant       GM.openInTab
 // ==/UserScript==
 
 // === WARNING ===
 // THE TAG FUNCTIONS ARE COMMENTED OUT IN ORDER TO PREVENT ACCIDENTAL DDoS DETECTION ON FURAFFINITY.
 this.$ = this.jQuery = jQuery.noConflict(true);
 
+// Shitty workaround, but w/e
+async function main() {
 // === INITIALIZE USER ARRAY ===
-var userArray = JSON.parse(GM_getValue('userList', '{}'));
-//var tagArray = JSON.parse(GM_getvalue('tagList', '{}'));
+var userArray = JSON.parse(await GM.getValue('userList', '{}'));
+//var tagArray = JSON.parse(GM.getvalue('tagList', '{}'));
 
 // === GENERAL TEMPORARY VARIABLES ===
 var filterEnabled = {['subs']:true, ['shouts']:true, ['coms']:true, ['notifications']:true};
@@ -47,7 +49,7 @@ var parseSettings = function() {
 
 // === SAVE ===
 function writeSettings() {
-    GM_setValue('userList', JSON.stringify(userArray));
+    GM.setValue('userList', JSON.stringify(userArray));
 }
 
 // === FUNCTIONS ===
@@ -672,3 +674,6 @@ else if (window.location.pathname.lastIndexOf('/view', 0) === 0) setTimeout(filt
 // Notifications
 else if (window.location.pathname.lastIndexOf('/msg/others', 0) === 0) setTimeout(filtersNotifications, 100);
 else setTimeout(filtersSubs, 100);
+}
+
+main();

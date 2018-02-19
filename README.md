@@ -11,6 +11,9 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.5.5</b> (2018-02-18)<br>
+- Firefox Quantum compatibility hotfix. Will probably rewrite later because the fix is questionable lmao
+
 <b>1.5.4</b> (2017-03-10)<br>
 - Updated beta layout compatibility.
 - Increased height of submissions in order to fit the Filter button.
