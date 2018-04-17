@@ -58,12 +58,15 @@ function writeSettings() {
         if ($('figure').length) {
             // Beta
             var submissionBeta = $('figure.u-' + escapeUsername(username));
+            var submissionFavesBeta = $('figure[data-user="u-' + escapeUsername(username) + '"]');
             var submissionInboxBeta = $('a[href="/user/' + username + '"]').closest('figure');
 
             stylizeHidden(submissionBeta);
+            stylizeHidden(submissionFavesBeta);
             stylizeHidden(submissionInboxBeta);
 
             submissionBeta.addClass('hidden-sub').hide();
+            submissionFavesBeta.addClass('hidden-sub').hide();
             submissionInboxBeta.find('input').prop('checked', true);
             submissionInboxBeta.addClass('hidden-sub').hide();
 
@@ -97,14 +100,19 @@ function writeSettings() {
         // Browse/Submissions
         var submission1 = $('b[id^="sid_"] a[href="/user/' + username + '/"]').closest('b');
         var submissionBeta = $('figure.u-' + escapeUsername(username));
+        var submissionFavesBeta = $('figure[data-user="u-' + escapeUsername(username) + '"]');
         var submissionInboxBeta = $('a[href^="/user/' + username + '"]').closest('figure');
+
         undoStylize(submission1);
         undoStylize(submissionBeta);
+        undoStylize(submissionFavesBeta);
         undoStylize(submissionInboxBeta);
+
         // Mark Submissions as Checked
         submission1.children('small').children('input').prop('checked', false);
         submission1.removeClass('hidden-sub').show();
         submissionBeta.removeClass('hidden-sub').show();
+        submissionFavesBeta.removeClass('hidden-sub').show();
         submissionInboxBeta.removeClass('hidden-sub').show();
         submissionInboxBeta.find('input').prop('checked', false);
 
@@ -244,8 +252,12 @@ function filtersSubs() {
     if ($('figure').length) {
         // Beta
         $('figure').each(function() {
-            var username = $(this).attr('class').match('u-([^\\s]+)')[1];
+            var username = $(this).attr('class').match('u-([^\\s]+)');
+            if (!username) {
+                username = $(this).attr('data-user').match('u-([^\\s]+)');
+            }
             if (username) {
+                username = username[1];
                 if (username in userArray && userArray[username]['subs'] === 1) {
                     $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-remove-user-external" id="faf-' + username + '" href="#!" title="Remove ' + username + ' from filter">[Unfilter]</a></p>');
                 } else {
