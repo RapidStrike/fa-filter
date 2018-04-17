@@ -4,7 +4,7 @@
 // @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.5.5
+// @version     1.5.6
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.deleteValue
