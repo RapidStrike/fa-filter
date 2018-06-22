@@ -4,7 +4,7 @@
 // @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.5.6
+// @version     1.5.7
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.deleteValue
@@ -238,8 +238,8 @@ function filtersSubs() {
     if ($('.hidden-sub').length > 0) {
         // Classic
         if (!$('li.lileft').length) {
-            $display = '<input style="float:right;" id="faf-toggle-subs" class="button" type="button" value="Toggle Filtered Submissions (' + $('.hidden-sub').length + ')"></input>';
-            $('form').first().append($display);
+            $display = '<input id="faf-toggle-subs" class="button" type="button" value="Toggle Filtered Submissions (' + $('.hidden-sub').length + ')"></input>';
+            $('form[name="replyform"]').first().append($display);
         // Beta
         } else {
             $display = '<li class="lileft"><a class="top-heading" id="faf-toggle-subs" href="#!"><div class="sprite-nuke menu-space-saver hideonmobile"></div>Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</a></li>';
@@ -423,6 +423,8 @@ $(document.body).on('click', '.faf-remove-user-external', function() {
 function displaySettings() {
     // Navbar link
     $('<li class="noblock"><a target="_blank" href="/controls/site-settings#fa-filter">FA Filter</a></li>').insertAfter($('li.sfw-toggle'));
+    // Navbar link (Classic)
+    $('<li class="noblock"><a target="_blank" href="/controls/site-settings#fa-filter">FA Filter</a></li>').insertAfter($('li#sfw-toggle'));
 
     if (window.location.pathname.lastIndexOf('/controls/site-settings', 0) === 0) {
         // Brute forced, but there are no tables in the beta layout site-settings page. This is one of the major differences.
@@ -516,7 +518,7 @@ function displaySettings() {
                     '</tbody></table>' +
                 '</td></tr>' +
                 '</tbody></table>';
-            $('form').append(settingsDisplay);
+            $('form').last().append(settingsDisplay);
         }
 
         // Populate list

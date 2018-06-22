@@ -11,6 +11,9 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.5.7</b> (2018-06-22)<br>
+- Updated classic layout compatibility.
+
 <b>1.5.6</b> (2018-04-17)<br>
 - Updated beta layout compatibility. Favorites section now works.
 
