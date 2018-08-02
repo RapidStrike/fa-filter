@@ -11,6 +11,10 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.5.8</b> (2018-08-01)<br>
+- Updated classic layout compatibility. Submission toggle button is now at the top bar rather than in the browse section.
+- Should probably also start getting cracking on that to-do list, huh.
+
 <b>1.5.7</b> (2018-06-22)<br>
 - Updated classic layout compatibility.
 

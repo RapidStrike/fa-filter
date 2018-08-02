@@ -238,8 +238,10 @@ function filtersSubs() {
     if ($('.hidden-sub').length > 0) {
         // Classic
         if (!$('li.lileft').length) {
-            $display = '<input id="faf-toggle-subs" class="button" type="button" value="Toggle Filtered Submissions (' + $('.hidden-sub').length + ')"></input>';
-            $('form[name="replyform"]').first().append($display);
+            // $display = '<input id="faf-toggle-subs" class="button" type="button" value="Toggle Filtered Submissions (' + $('.hidden-sub').length + ')"></input>';
+            // $('form[name="replyform"]').first().append($display);
+            $display = '<li><a id="faf-toggle-subs" href="#!">⚠ Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</a></li>';
+            $('.search-box-container').first().before($display);
         // Beta
         } else {
             $display = '<li class="lileft"><a class="top-heading" id="faf-toggle-subs" href="#!"><div class="sprite-nuke menu-space-saver hideonmobile"></div>Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</a></li>';
