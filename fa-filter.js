@@ -521,7 +521,7 @@ function displaySettings() {
                         '</div>' +
                         '<div class="control-panel-item-options">' +
                             '<select name="faf-validate-options" id="select-faf-validate-options" class="styled">' +
-                                '<option value="v" selected="selected">Vaildate Only</option>' +
+                                '<option value="v" selected="selected">Validate Only</option>' +
                                 '<option value="vr">Validate and Remove Unused</option>' +
                             '</select><br/><input id="faf-validate" class="button" type="button" value="Apply" style="margin-top: 10px;"/><br/>' +
                             '<span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>' +
