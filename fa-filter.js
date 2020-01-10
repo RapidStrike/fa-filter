@@ -4,7 +4,7 @@
 // @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.5.8
+// @version     1.6.0
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.deleteValue
@@ -19,6 +19,7 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 async function main() {
 // === INITIALIZE USER ARRAY ===
 var userArray = JSON.parse(await GM.getValue('userList', '{}'));
+var versionNumber = 1.6;
 //var tagArray = JSON.parse(GM.getvalue('tagList', '{}'));
 
 // === GENERAL TEMPORARY VARIABLES ===
@@ -50,12 +51,13 @@ var parseSettings = function() {
 // === SAVE ===
 function writeSettings() {
     GM.setValue('userList', JSON.stringify(userArray));
+    GM.setValue('versionNumber', versionNumber);
 }
 
 // === FUNCTIONS ===
     // Hide user submissions
     function hideSubmissions(username) {
-        if ($('figure').length) {
+        if (isBeta()) {
             // Beta
             var submissionBeta = $('figure.u-' + escapeUsername(username));
             var submissionFavesBeta = $('figure[data-user="u-' + escapeUsername(username) + '"]');
@@ -131,7 +133,7 @@ function writeSettings() {
         shout.next('br').addClass('hidden-shout-br').hide();
 
         // Beta
-        var shoutBeta = $('.comment_container .shout-avatar img[alt="' + username +'"]').closest('.comment_container');
+        var shoutBeta = $('.comment_container .shout-avatar img[alt="' + username + '"]').closest('.comment_container');
         shoutBeta.addClass('hidden-shout').hide();
         stylizeHidden(shoutBeta.find('.header'));
         stylizeHidden(shoutBeta.find('.body'));
@@ -172,7 +174,7 @@ function writeSettings() {
         });
 
         // Beta
-        var commentsBeta = $('.comment_container .avatar img[alt="' + username + '"]').closest('.comment_container');
+        var commentsBeta = $('.comments-list .comment_container .avatar-desktop img[alt="' + username + '"], .comments-journal .comment_container .avatar-desktop img[alt="' + username + '"]').closest('.comment_container');
         stylizeHidden(commentsBeta.find('.header'));
         stylizeHidden(commentsBeta.find('.body'));
 
@@ -201,6 +203,35 @@ function writeSettings() {
         });
     }
 
+    function showComments(username) {
+        var comments = $('.comments-list .comment_container .avatar-desktop img[alt="' + username + '"], .comments-journal .comment_container .avatar-desktop img[alt="' + username + '"]').closest('.comment_container');
+        undoStylize(comments.find('.header'));
+        undoStylize(comments.find('.body'));
+
+        $(comments).each(function() {
+            if ($(this).hasClass('hidden-comment')) {
+                var width = $(this).width();
+                var current = $(this).next('.comment_container');
+
+                $(this).removeClass('hidden-comment').show();
+
+                // Iterate through the comments until there's a width that is greater than or equal
+                while (true) {
+                    if (current.length) {
+                        if (current.width() < width) {
+                            current.removeClass('hidden-comment').show();
+                            current = current.next('.comment_container');
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
     // Hide user notifications
     function hideNotifications(username) {
         var notification = $('.message-stream a[href="/user/' + username + '/"]').closest('li');
@@ -213,7 +244,7 @@ function writeSettings() {
     }
 
     function stylizeHidden(item) {
-        $(item).css('background-color', '#FFBBBB');
+        $(item).css({'cssText': 'background-color: #FFBBBB !important'});
         $(item).css('color', '#FF0000');
         $('a:link', item).css('color', '#FF0000');
         $('a:visited', item).css('color', '#FF0000');
@@ -236,22 +267,22 @@ function filtersSubs() {
     $('.faf-add-user-external').parent().remove();
 
     if ($('.hidden-sub').length > 0) {
-        // Classic
-        if (!$('li.lileft').length) {
+        if (isBeta()) {
+            // Beta
+            $display = '<li class="lileft"><a class="top-heading" id="faf-toggle-subs" href="#!"><div class="sprite-nuke menu-space-saver hideonmobile"></div>Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</a></li>';
+            $('.lileft').last().after($display);
+        } else {
+            // Classic
             // $display = '<input id="faf-toggle-subs" class="button" type="button" value="Toggle Filtered Submissions (' + $('.hidden-sub').length + ')"></input>';
             // $('form[name="replyform"]').first().append($display);
             $display = '<li><a id="faf-toggle-subs" href="#!">⚠ Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</a></li>';
             $('.search-box-container').first().before($display);
-        // Beta
-        } else {
-            $display = '<li class="lileft"><a class="top-heading" id="faf-toggle-subs" href="#!"><div class="sprite-nuke menu-space-saver hideonmobile"></div>Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</a></li>';
-            $('.lileft').last().after($display);
         }
     } else {
         filterEnabled['subs'] = true;
     }
 
-    if ($('figure').length) {
+    if (isBeta()) {
         // Beta
         $('figure').each(function() {
             var username = $(this).attr('class').match('u-([^\\s]+)');
@@ -261,9 +292,9 @@ function filtersSubs() {
             if (username) {
                 username = username[1];
                 if (username in userArray && userArray[username]['subs'] === 1) {
-                    $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-remove-user-external" id="faf-' + username + '" href="#!" title="Remove ' + username + ' from filter">[Unfilter]</a></p>');
+                    $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-remove-user-external faf-ex-subs" id="faf-' + username + '" href="#!" title="Remove ' + username + ' from filter">[Unfilter]</a></p>');
                 } else {
-                    $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-add-user-external" id="faf-' + username + '" href="#!" title="Add ' + username + ' to filter">[Filter]</a></p>');
+                    $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-add-user-external faf-ex-subs" id="faf-' + username + '" href="#!" title="Add ' + username + ' to filter">[Filter]</a></p>');
                 }
             }
         });
@@ -273,9 +304,9 @@ function filtersSubs() {
             username = username.match('/user/(.*)/');
             if (username) {
                 if (username[1] in userArray && userArray[username[1]]['subs'] === 1) {
-                    $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-remove-user-external" id="faf-' + username[1] + '" href="#!" title="Remove ' + username[1] + ' from filter">[Unfilter]</a></span>');
+                    $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-remove-user-external faf-ex-subs" id="faf-' + username[1] + '" href="#!" title="Remove ' + username[1] + ' from filter">[Unfilter]</a></span>');
                 } else {
-                    $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-add-user-external" id="faf-' + username[1] + '" href="#!" title="Add ' + username[1] + ' to filter">[Filter]</a></span>');
+                    $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-add-user-external faf-ex-subs" id="faf-' + username[1] + '" href="#!" title="Add ' + username[1] + ' to filter">[Filter]</a></span>');
                 }
             }
         });
@@ -285,8 +316,7 @@ function filtersSubs() {
 // Followed Submissions
 function filtersSubsFollow() {
     if ($('.hidden-sub').length > 0) {
-        // Beta
-        if ($('.button-nav-item').length) {
+        if (isBeta()) {
             $display = '<div class="button-nav-item"><button class="button mobile-button" id="faf-toggle-subs" type="button">Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</button></div>';
             $('.actions').css('max-width', '700px');
         } else {
@@ -299,11 +329,11 @@ function filtersSubsFollow() {
 // Shouts
 function filtersShouts() {
     if ($('.hidden-shout').length > 0) {
-        $display = '<center><input id="faf-toggle-shouts" class="button" type="button" value="Toggle Filtered Shouts (' + $('.hidden-shout').length + ')"></input></center>';
+        $display = '<input id="faf-toggle-shouts" class="button" type="button" value="Toggle Filtered Shouts (' + $('.hidden-shout').length + ')"></input>';
         // Classic
         $('table[id^="shout-"]').first().prevAll('table.maintable:first').append($display);
         // Beta
-        $($display).insertAfter('#shoutboxentry');
+        $($display).insertBefore($('.section-body .comment_container').first());
     }
 }
 
@@ -318,16 +348,32 @@ function filtersShoutsControl() {
 
 // Comments
 function filtersComments() {
+    // Remove all pre-existing UI for soft-refresh
+    $('[id="faf-toggle-comments"]').remove();
+    $('.faf-remove-user-external').parent().remove();
+    $('.faf-add-user-external').parent().remove();
+
     if ($('.hidden-comment').length > 0) {
         $display = '<input style="float:right;" id="faf-toggle-comments" class="button" type="button" value="Toggle Filtered Comments (' + $('.hidden-comment').length + ')"></input>';
-        if (!$('.flex-submission-container').length) {
+        if (isBeta()) {
+            // Beta
+            $($display).insertBefore('#comments-submission, #responsebox');
+        } else {
             // Classic
             $('table.container-comment').first().parent().parent().prev().children().append($display);
-        } else {
-            // Beta
-            $($display).insertAfter('.flex-submission-container');
         }
     }
+
+    $('.comments-list .comment_container, .comments-journal .comment_container').each(function() {
+        var username = $(this).find('.avatar-desktop img').attr('alt');
+        if (username) {
+            if (username in userArray && userArray[username]['coms'] === 1) {
+                $(this).find('.comment-date').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-remove-user-external faf-ex-coms" id="faf-' + username + '" href="#!" title="Show ' + username + '\'s comments">[Unfilter]</a></span>');
+            } else {
+                $(this).find('.comment-date').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-add-user-external faf-ex-coms" id="faf-' + username + '" href="#!" title="Hide ' + username + '\'s comments">[Filter]</a></span>');
+            }
+        }
+    });
 }
 
 // Notifications
@@ -395,14 +441,28 @@ $(document.body).on('click', '.faf-add-user-external', function() {
 
     // Add to array
     if (!(addUser in userArray)) {
-        userArray[addUser] = {'subs':1, 'shouts':0, 'coms':0, 'notifications':0};
+        userArray[addUser] = {
+            'subs': $(this).hasClass('faf-ex-subs') ? 1 : 0,
+            'shouts': $(this).hasClass('faf-ex-shouts') ? 1 : 0,
+            'coms': $(this).hasClass('faf-ex-coms') ? 1 : 0,
+            'notifications': $(this).hasClass('faf-ex-notifications') ? 1 : 0
+        };
     } else {
-        userArray[addUser]['subs'] = 1;
+        if ($(this).hasClass('faf-ex-subs')) {
+            userArray[addUser]['subs'] = 1;
+        } else if ($(this).hasClass('faf-ex-coms')) {
+            userArray[addUser]['coms'] = 1;
+        }
     }
 
     // Hide, replace link, and save
-    hideSubmissions(addUser);
-    filtersSubs();
+    if ($(this).hasClass('faf-ex-subs')) {
+        hideSubmissions(addUser);
+        filtersSubs();
+    } else if ($(this).hasClass('faf-ex-coms')) {
+        hideComments(addUser);
+        filtersComments();
+    }
     writeSettings();
 });
 
@@ -412,53 +472,74 @@ $(document.body).on('click', '.faf-remove-user-external', function() {
 
     // Remove from array
     if (removeUser in userArray) {
-        userArray[removeUser]['subs'] = 0;
+        if ($(this).hasClass('faf-ex-subs')) {
+            userArray[removeUser]['subs'] = 0;
+        } else if ($(this).hasClass('faf-ex-coms')) {
+            userArray[removeUser]['coms'] = 0;
+        }
     }
 
     // Show, replace link, and save
-    showSubmissions(removeUser);
-    filtersSubs();
+    if ($(this).hasClass('faf-ex-subs')) {
+        showSubmissions(removeUser);
+        filtersSubs();
+    } else if ($(this).hasClass('faf-ex-coms')) {
+        showComments(removeUser);
+        filtersComments();
+    }
     writeSettings();
 });
 
 // == User Settings ==
 function displaySettings() {
     // Navbar link
-    $('<li class="noblock"><a target="_blank" href="/controls/site-settings#fa-filter">FA Filter</a></li>').insertAfter($('li.sfw-toggle'));
+    $('<li class="noblock"><a target="_blank" href="/controls/site-settings#fa-filter">FA Filter</a></li>').insertAfter($('.navhideonmobile li').last());
     // Navbar link (Classic)
     $('<li class="noblock"><a target="_blank" href="/controls/site-settings#fa-filter">FA Filter</a></li>').insertAfter($('li#sfw-toggle'));
 
     if (window.location.pathname.lastIndexOf('/controls/site-settings', 0) === 0) {
-        // Brute forced, but there are no tables in the beta layout site-settings page. This is one of the major differences.
-        if (!$('table').length) {
+        if (isBeta()) {
             // Beta HTML Code
             var settingsDisplay = '<section>' +
                 '<div class="section-body">' +
                     '<h2 id="fa-filter">FA Filter</h2>' +
-                    '<h4>Add a User</h4>' +
-                    '<div class="control-panel-option">' +
-                        '<div class="control-panel-item-1">' +
-                            '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br/><strong>Note:</strong> Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".' +
+                    '<div class="control-panel-item-container">' +
+                        '<div class="control-panel-item-name"><h4>Add a User</h4></div>' +
+                        '<div class="control-panel-item-description">' +
+                            '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br/>Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".</p>' +
                         '</div>' +
-                        '<div class="control-panel-item-2">' +
-                            '<input class="textbox" type="text" id="faf-add-username" maxlength="50"></input>&nbsp;<input id="faf-add" class="button" type="button" value="Add" />' +
+                        '<div class="control-panel-item-options">' +
+                            '<input class="textbox" type="text" id="faf-add-username" maxlength="50"></input>&nbsp;&nbsp;&nbsp;<input id="faf-add" class="button" type="button" value="Add" />' +
                         '</div>' +
                     '</div>' +
-                    '<h4>Validate Filters</h4>' +
-                    '<div class="control-panel-option">' +
-                        '<div class="control-panel-item-1">' +
-                            '<p>This double-checks to make sure that your filtered usernames are correct and, optionally, removes users that don\'t have any enabled filters.<br/><strong>Note:</strong> This automatically saves the list.</p>' +
+                    '<div class="control-panel-item-container">' +
+                        '<div class="control-panel-item-name"><h4>Validate Filters</h4></div>' +
+                        '<div class="control-panel-item-description">' +
+                            '<p>This double-checks to make sure that your filtered usernames are correct and, optionally, removes users that don\'t have any enabled filters. This automatically saves the list.</p>' +
+                            '<strong class="highlight">Validate Only</strong> - Simply validates that the usernames that have been entered are correctly formatted.<br/>' +
+                            '<strong class="highlight">Validate and Remove Unused</strong> - Does the same as above and also removes any users with zero filters in the list.<br/>' +
                         '</div>' +
-                        '<div class="control-panel-item-2">' +
+                        '<div class="control-panel-item-options">' +
                             '<select name="faf-validate-options" id="select-faf-validate-options" class="styled">' +
-                                '<option value="v" selected="selected">Vaildate Filters Only</option>' +
-                                '<option value="vr">Validate and Remove Unused Filters</option>' +
-                            '</select><input id="faf-validate" class="button" type="button" value="Apply" /><br/>' +
+                                '<option value="v" selected="selected">Vaildate Only</option>' +
+                                '<option value="vr">Validate and Remove Unused</option>' +
+                            '</select><br/><input id="faf-validate" class="button" type="button" value="Apply" style="margin-top: 10px;"/><br/>' +
                             '<span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>' +
                         '</div>' +
                     '</div>' +
-                    '<div class="maintable rounded">' +
-                        '<table class="sessions-list faf-list faf-list-beta" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:0 15px 10px 15px">' +
+                    '<div class="control-panel-item-container">' +
+                        '<div class="control-panel-item-name"><h4>Export/Import Data</h4></div>' +
+                        '<div class="control-panel-item-description">' +
+                            '<p>Export your filters or import them from somewhere else.</p>' +
+                        '</div>' +
+                        '<div class="control-panel-item-options">' +
+                            '<input class="textbox" type="text" id="faf-raw-port" style="margin-bottom: 10px; width: 100%;" placeholder="Paste your filter data here..."></input><br/>' +
+                            '<input id="faf-port-clear" class="button" type="button" value="Clear" />&nbsp;&nbsp;&nbsp;<input id="faf-import" class="button" type="button" value="Import" />&nbsp;&nbsp;&nbsp;<input id="faf-export" class="button" type="button" value="Export" /><br/>' +
+                            '<span class="faf-import-status" style="font-weight: bold; color: #FF6666; display: none;">Invalid data!</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="activity-periods-list">' +
+                        '<table class="container faf-list faf-list-beta" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:0 15px 10px 15px">' +
                             '<tbody>' +
                                 '<tr>' +
                                     '<td class="p10t p5r p5b"><h3>Username</h3></td>' +
@@ -470,9 +551,9 @@ function displaySettings() {
                             '</tbody>' +
                         '</table>' +
                     '</div>' +
-                '</div>' +
-                '<div class="section-footer alignright">' +
-                    '<span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>&nbsp;&nbsp;<input class="button mobile-button" id="faf-update" type="button" value="Apply Filters (FA Filter)">' +
+                    '<div class="section-options">' +
+                        '<span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>&nbsp;&nbsp;<input class="button mobile-button" id="faf-update" type="button" value="Apply Filters (FA Filter)">' +
+                    '</div>' +
                 '</div>' +
             '</section>';
             $(settingsDisplay).insertBefore($('section').last());
@@ -532,21 +613,9 @@ function displaySettings() {
 
 // Display user in the filter table
 function addFilterUser(username, data) {
-    // Classic
-    if ($('table.faf-list-classic').length) {
-
-        var row = '<tr class="checked" id="filter-' + username + '"><td class="noborder"><a class="fa-filter-remove fonthighlight" id="faf-rm-' + username + '" href="#!">[x]</a> ' + username + '</td>';
-        if (data['subs'] === 1) { row += '<td class="noborder"><input id="faf-check-subs-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-subs-' + username + '" type="checkbox"></td>'; }
-        if (data['shouts'] === 1) { row += '<td class="noborder"><input id="faf-check-shouts-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-shouts-' + username + '" type="checkbox"></td>'; }
-        if (data['coms'] === 1) { row += '<td class="noborder"><input id="faf-check-coms-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-coms-' + username + '" type="checkbox"></td>'; }
-        if (data['notifications'] === 1) { row += '<td class="noborder"><input id="faf-check-notifications-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-notifications-' + username + '" type="checkbox"></td>'; }
-
-        row += '</tr>';
-
-        $('table.faf-list tr:last').after(row);
-    // Beta
-    } else {
-        var rowBeta = '<tr id="filter-' + username + '"><td class="p5r" valign="middle" width="auto"><a class="fa-filter-remove" id="faf-rm-' + username + '" href="#!">[x]</a> ' + username + '</td>';
+    if (isBeta()) {
+        // Beta
+        var rowBeta = '<tr class="faf-filter-table-row" id="filter-' + username + '"><td class="p5r" valign="middle" width="auto"><a class="faf-remove" id="faf-rm-' + username + '" href="#!">[x]</a> ' + username + '</td>';
         if (data['subs'] === 1) { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-subs-' + username + '" type="checkbox" checked="checked"></td>'; } else { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-subs-' + username + '" type="checkbox"></td>'; }
         if (data['shouts'] === 1) { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-shouts-' + username + '" type="checkbox" checked="checked"></td>'; } else { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-shouts-' + username + '" type="checkbox"></td>'; }
         if (data['coms'] === 1) { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-coms-' + username + '" type="checkbox" checked="checked"></td>'; } else { rowBeta += '<td class="p5r" valign="middle" width="auto"><input id="faf-check-coms-' + username + '" type="checkbox"></td>'; }
@@ -555,6 +624,17 @@ function addFilterUser(username, data) {
         rowBeta += '</tr>';
 
         $('table.faf-list tr:last').after(rowBeta);
+    } else {
+        // Classic
+        var row = '<tr class="checked" id="filter-' + username + '"><td class="noborder"><a class="faf-remove fonthighlight" id="faf-rm-' + username + '" href="#!">[x]</a> ' + username + '</td>';
+        if (data['subs'] === 1) { row += '<td class="noborder"><input id="faf-check-subs-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-subs-' + username + '" type="checkbox"></td>'; }
+        if (data['shouts'] === 1) { row += '<td class="noborder"><input id="faf-check-shouts-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-shouts-' + username + '" type="checkbox"></td>'; }
+        if (data['coms'] === 1) { row += '<td class="noborder"><input id="faf-check-coms-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-coms-' + username + '" type="checkbox"></td>'; }
+        if (data['notifications'] === 1) { row += '<td class="noborder"><input id="faf-check-notifications-' + username + '" type="checkbox" checked="checked"></td>'; } else { row += '<td class="noborder"><input id="faf-check-notifications-' + username + '" type="checkbox"></td>'; }
+
+        row += '</tr>';
+
+        $('table.faf-list tr:last').after(row);
     }
 }
 
@@ -573,7 +653,7 @@ $(document.body).on('click', '#faf-add', function() {
 });
 
 // Remove
-$(document.body).on('click', 'a.fa-filter-remove', function(event) {
+$(document.body).on('click', 'a.faf-remove', function(event) {
     var username = event.target.id.substr(7);
     delete userArray[username];
 
@@ -656,6 +736,45 @@ $(document.body).on('click', '#faf-validate', function() {
     }, 5000);
 });
 
+// IMPORT/EXPORT
+// Clear
+$(document.body).on('click', '#faf-port-clear', function() {
+    $('#faf-raw-port').val('');
+});
+
+// Export
+$(document.body).on('click', '#faf-export', function() {
+    var exportVal = {'versionNumber': versionNumber, 'userList': userArray};
+    $('#faf-raw-port').val(JSON.stringify(exportVal));
+});
+
+// Import
+$(document.body).on('click', '#faf-import', async function() {
+    if ($.trim($('#faf-raw-port').val()).length > 0) {
+        var importJson = null;
+        try {
+            importJson = JSON.parse($('#faf-raw-port').val());
+
+            await validateAndImportData(importJson);
+
+            writeSettings();
+
+            $('.faf-import-status').css('color', '#006600').text('Import successful!');
+            $('.faf-import-status').fadeIn('slow');
+            setTimeout(function() {
+                $('.faf-import-status').fadeOut('slow');
+            }, 5000);
+        } catch (e) {
+            $('.faf-import-status').css('color', '#FF6666').text('Invalid data!');
+            $('.faf-import-status').fadeIn('slow');
+            setTimeout(function() {
+                $('.faf-import-status').fadeOut('slow');
+            }, 5000);
+            return;
+        }
+    }
+});
+
 // === UTILITIES ===
 function escapeUsername(username) {
     // Replace periods/colons/tildes with escaped versions. Who the fuck allows periods AND tildes in usernames, seriously?
@@ -666,10 +785,39 @@ function escapeUsername(username) {
 }
 
 function updateCSS() {
+    // Fuck Greasemonkey
     var newCSS = '<style type="text/css">' +
             'section.gallery figure { padding-bottom: 62px; }' +
+            '.faf-filter-table-row:hover { background-color: #888888; }' +
         '</style>';
     $('head').append(newCSS);
+}
+
+function isBeta() {
+    return $('body').attr('data-static-path') === '/themes/beta';
+}
+
+// IMPORT FUNCTIONALITY - UPDATE WITH EACH MAJOR UPDATE
+async function validateAndImportData(jsonData) {
+    switch (jsonData.version) {
+        case '1.6':
+        default:
+            // Version 1.6 - User data only
+            $.each(jsonData.userList, function(user, filters) {
+                // Validate each user and filter
+                $.each(filters, function(type, value) {
+                    if (value != 0 && value != 1) {
+                        throw "Invalid value.";
+                    }
+                });
+                userArray[user] = {
+                    'subs': filters.subs,
+                    'shouts': filters.shouts,
+                    'coms': filters.coms,
+                    'notifications': filters.notifications
+                }
+            });
+    }
 }
 
 displaySettings();
@@ -687,6 +835,7 @@ else if (window.location.pathname.lastIndexOf('/user', 0) === 0) setTimeout(filt
 else if (window.location.pathname.lastIndexOf('/controls/shouts', 0) === 0) setTimeout(filtersShoutsControl, 100);
 // Comments
 else if (window.location.pathname.lastIndexOf('/view', 0) === 0) setTimeout(filtersComments, 100);
+else if (window.location.pathname.lastIndexOf('/journal', 0) === 0) setTimeout(filtersComments, 100);
 // Notifications
 else if (window.location.pathname.lastIndexOf('/msg/others', 0) === 0) setTimeout(filtersNotifications, 100);
 else setTimeout(filtersSubs, 100);

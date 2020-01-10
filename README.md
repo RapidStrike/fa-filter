@@ -8,9 +8,17 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - Filtering options for user submissions, comments, shouts, and notifications.
  - SUBMISSIONS: User submissions are hidden on front page, browse page, and user pages.
  - COMMENTS: Comment threads are filtered completely.
+ - SHOUTS: Shouts on user pages are hidden.
+ - NOTIFICATIONS: Just in case the thought of a specific person making it in your notifications grosses you out.
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.6.0</b> (2020-01-10)<br>
+- NEW EXPORT FUNCTIONALITY! You can now transfer your data between browsers or share your filters with others.
+- Comments can now be hidden directly by comment. Filtering works on journal comments as well.
+- Updated beta layout compatibility.
+- [SIDE NOTE] If you want classic layout updates, please let me know.
+
 <b>1.5.8</b> (2018-08-01)<br>
 - Updated classic layout compatibility. Submission toggle button is now at the top bar rather than in the browse section.
 - Should probably also start getting cracking on that to-do list, huh.
