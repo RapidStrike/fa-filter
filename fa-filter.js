@@ -4,7 +4,7 @@
 // @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.6.0
+// @version     1.6.1
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.deleteValue
@@ -57,44 +57,22 @@ function writeSettings() {
 // === FUNCTIONS ===
     // Hide user submissions
     function hideSubmissions(username) {
-        if (isBeta()) {
-            // Beta
-            var submissionBeta = $('figure.u-' + escapeUsername(username));
-            var submissionFavesBeta = $('figure[data-user="u-' + escapeUsername(username) + '"]');
-            var submissionInboxBeta = $('a[href="/user/' + username + '"]').closest('figure');
+        var submissionBeta = $('figure.u-' + escapeUsername(username));
+        var submissionFavesBeta = $('figure[data-user="u-' + escapeUsername(username) + '"]');
+        var submissionInboxBeta = $('a[href="/user/' + username + '"]').closest('figure');
 
-            stylizeHidden(submissionBeta);
-            stylizeHidden(submissionFavesBeta);
-            stylizeHidden(submissionInboxBeta);
+        stylizeHidden(submissionBeta);
+        stylizeHidden(submissionFavesBeta);
+        stylizeHidden(submissionInboxBeta);
 
-            submissionBeta.addClass('hidden-sub').hide();
-            submissionFavesBeta.addClass('hidden-sub').hide();
-            submissionInboxBeta.find('input').prop('checked', true);
-            submissionInboxBeta.addClass('hidden-sub').hide();
+        submissionBeta.addClass('hidden-sub').hide();
+        submissionFavesBeta.addClass('hidden-sub').hide();
+        submissionInboxBeta.find('input').prop('checked', true);
+        submissionInboxBeta.addClass('hidden-sub').hide();
 
-            if (!filterEnabled['subs']) {
-                submissionBeta.show();
-                submissionInboxBeta.show();
-            }
-        } else {
-            // Classic
-            // Browse/Submissions
-            var submission1 = $('b[id^="sid_"] a[href="/user/' + username + '/"]').closest('b');
-            stylizeHidden(submission1);
-            // Mark Submissions as Checked
-            submission1.children('small').children('input').prop('checked', true);
-            submission1.addClass('hidden-sub').hide();
-
-            // Favorites/Front Page
-            var submission2 = $('b[id^="sid_"] img[src$="#' + username + '"]').closest('b');
-            stylizeHidden(submission2);
-            submission2.addClass('hidden-sub').hide();
-
-            // Correspond to UI
-            if (!filterEnabled['subs']) {
-                submission1.show();
-                submission2.show();
-            }
+        if (!filterEnabled['subs']) {
+            submissionBeta.show();
+            submissionInboxBeta.show();
         }
     }
 
@@ -282,35 +260,20 @@ function filtersSubs() {
         filterEnabled['subs'] = true;
     }
 
-    if (isBeta()) {
-        // Beta
-        $('figure').each(function() {
-            var username = $(this).attr('class').match('u-([^\\s]+)');
-            if (!username) {
-                username = $(this).attr('data-user').match('u-([^\\s]+)');
+    $('figure').each(function() {
+        var username = $(this).attr('class').match('u-([^\\s]+)');
+        if (!username) {
+            username = $(this).attr('data-user').match('u-([^\\s]+)');
+        }
+        if (username) {
+            username = username[1];
+            if (username in userArray && userArray[username]['subs'] === 1) {
+                $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-remove-user-external faf-ex-subs" id="faf-' + username + '" href="#!" title="Remove ' + username + ' from filter">[Unfilter]</a></p>');
+            } else {
+                $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-add-user-external faf-ex-subs" id="faf-' + username + '" href="#!" title="Add ' + username + ' to filter">[Filter]</a></p>');
             }
-            if (username) {
-                username = username[1];
-                if (username in userArray && userArray[username]['subs'] === 1) {
-                    $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-remove-user-external faf-ex-subs" id="faf-' + username + '" href="#!" title="Remove ' + username + ' from filter">[Unfilter]</a></p>');
-                } else {
-                    $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-add-user-external faf-ex-subs" id="faf-' + username + '" href="#!" title="Add ' + username + ' to filter">[Filter]</a></p>');
-                }
-            }
-        });
-    } else {
-        $('b[id^="sid_"]').each(function() {
-            var username = $(this).find('small a').attr('href');
-            username = username.match('/user/(.*)/');
-            if (username) {
-                if (username[1] in userArray && userArray[username[1]]['subs'] === 1) {
-                    $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-remove-user-external faf-ex-subs" id="faf-' + username[1] + '" href="#!" title="Remove ' + username[1] + ' from filter">[Unfilter]</a></span>');
-                } else {
-                    $(this).find('small').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-add-user-external faf-ex-subs" id="faf-' + username[1] + '" href="#!" title="Add ' + username[1] + ' to filter">[Filter]</a></span>');
-                }
-            }
-        });
-    }
+        }
+    });
 }
 
 // Followed Submissions
@@ -521,7 +484,7 @@ function displaySettings() {
                         '</div>' +
                         '<div class="control-panel-item-options">' +
                             '<select name="faf-validate-options" id="select-faf-validate-options" class="styled">' +
-                                '<option value="v" selected="selected">Validate Only</option>' +
+                                '<option value="v" selected="selected">Vaildate Only</option>' +
                                 '<option value="vr">Validate and Remove Unused</option>' +
                             '</select><br/><input id="faf-validate" class="button" type="button" value="Apply" style="margin-top: 10px;"/><br/>' +
                             '<span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>' +
@@ -585,6 +548,17 @@ function displaySettings() {
                                 '<p>This double-checks to make sure that your filtered usernames are correct and, optionally, removes users that don\'t have any enabled filters.<br/><strong>Note:</strong> This automatically saves the list.</p>' +
                             '</td>' +
                         '</tr>' +
+                        '<tr>' +
+                            '<th><strong>Export/Import Data</strong></th>' +
+                            '<td>' +
+                                 '<input type="text" id="faf-raw-port" style="margin-bottom: 10px;" placeholder="Paste your filter data here..."></input><br/>' +
+                                 '<input id="faf-port-clear" class="button" type="button" value="Clear" />&nbsp;&nbsp;&nbsp;<input id="faf-import" class="button" type="button" value="Import" />&nbsp;&nbsp;&nbsp;<input id="faf-export" class="button" type="button" value="Export" /><br/>' +
+                                 '<span class="faf-import-status" style="font-weight: bold; color: #FF6666; display: none;">Invalid data!</span>' +
+                            '</td>' +
+                            '<td class="option-description">' +
+                                '<h3>Grab your filters to send to another browser.</h3>' +
+                                '<p>Export your filters or import them from somewhere else.</p>' +
+                            '</td>' +
                         '<tr>' +
                             '<th class="noborder" style="vertical-align: text-top;"><strong style="position: relative; top: 25px;">Modify Filters</strong></th>' +
                             '<td class="noborder">' +

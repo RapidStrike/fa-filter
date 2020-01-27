@@ -13,6 +13,10 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.6.1</b> (2020-01-27)<br>
+- Fixed classic layout compatibility. Turns out FA is slowly modernizing the classic layout as well.
+- Added the export functionalty for the classic view as well.
+
 <b>1.6.0</b> (2020-01-10)<br>
 - NEW EXPORT FUNCTIONALITY! You can now transfer your data between browsers or share your filters with others.
 - Comments can now be hidden directly by comment. Filtering works on journal comments as well.
