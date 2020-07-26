@@ -10,9 +10,14 @@ This is a simple userscript for filtering out people you don't want to see on Fu
  - COMMENTS: Comment threads are filtered completely.
  - SHOUTS: Shouts on user pages are hidden.
  - NOTIFICATIONS: Just in case the thought of a specific person making it in your notifications grosses you out.
+- [NEW] Filtering titles by string.
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.7.0</b> (2020-07-26)<br>
+- NEW WORD FILTER FUNCTIONALITY! You can now filter out submissions based on the strings you provide. As a basic functionality, this will only work with exact strings and not if they're partial or incorrectly-spelled.
+- Fixed save functionality.
+
 <b>1.6.1</b> (2020-01-27)<br>
 - Fixed classic layout compatibility. Turns out FA is slowly modernizing the classic layout as well.
 - Added the export functionalty for the classic view as well.
@@ -87,3 +92,4 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - [ ] **[EXTERNAL FILTERS]** Shouts
 - [ ] **[EXTERNAL FILTERS]** Notifications
 - [x] Add support for the beta layout. (Ongoing)
+- [x] Submission title filtering.

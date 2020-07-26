@@ -4,7 +4,7 @@
 // @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.6.1
+// @version     1.7.0
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.deleteValue
@@ -17,9 +17,11 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 
 // Shitty workaround, but w/e
 async function main() {
+
+const VERSION_NUMBER = 1.7;
 // === INITIALIZE USER ARRAY ===
 var userArray = JSON.parse(await GM.getValue('userList', '{}'));
-var versionNumber = 1.6;
+var wordFilter = JSON.parse(await GM.getValue('wordFilter', '[]'));
 //var tagArray = JSON.parse(GM.getvalue('tagList', '{}'));
 
 // === GENERAL TEMPORARY VARIABLES ===
@@ -37,6 +39,22 @@ var parseSettings = function() {
     }
 };
 
+var applyWordFilters = function() {
+    const wordFilterExpTxt = '\\b(' + $.map(wordFilter, escapeRegex).join('|') + ')\\b';
+    $('figure figcaption a[href^="/view"]').each(function() {
+        var wordFilterExp = new RegExp(wordFilterExpTxt, 'i');
+        if (wordFilterExp.test($(this).text())) {
+            var mainElement = $(this).closest('figure');
+            stylizeHidden(mainElement);
+            mainElement.addClass('hidden-sub').hide();
+
+            if (!filterEnabled.subs) {
+                mainElement.show();
+            }
+        }
+    });
+};
+
 //var parseTagSettings = function() {
 //    $('.t-image a[href^="/view"]').each(function() {
 //        var url = $(this).attr('href');
@@ -51,14 +69,15 @@ var parseSettings = function() {
 // === SAVE ===
 function writeSettings() {
     GM.setValue('userList', JSON.stringify(userArray));
-    GM.setValue('versionNumber', versionNumber);
+    GM.setValue('wordFilter', JSON.stringify(wordFilter));
+    GM.setValue('versionNumber', JSON.stringify(VERSION_NUMBER));
 }
 
 // === FUNCTIONS ===
     // Hide user submissions
     function hideSubmissions(username) {
-        var submissionBeta = $('figure.u-' + escapeUsername(username));
-        var submissionFavesBeta = $('figure[data-user="u-' + escapeUsername(username) + '"]');
+        var submissionBeta = $('figure.u-' + escapeRegex(username));
+        var submissionFavesBeta = $('figure[data-user="u-' + escapeRegex(username) + '"]');
         var submissionInboxBeta = $('a[href="/user/' + username + '"]').closest('figure');
 
         stylizeHidden(submissionBeta);
@@ -79,8 +98,8 @@ function writeSettings() {
     function showSubmissions(username) {
         // Browse/Submissions
         var submission1 = $('b[id^="sid_"] a[href="/user/' + username + '/"]').closest('b');
-        var submissionBeta = $('figure.u-' + escapeUsername(username));
-        var submissionFavesBeta = $('figure[data-user="u-' + escapeUsername(username) + '"]');
+        var submissionBeta = $('figure.u-' + escapeRegex(username));
+        var submissionFavesBeta = $('figure[data-user="u-' + escapeRegex(username) + '"]');
         var submissionInboxBeta = $('a[href^="/user/' + username + '"]').closest('figure');
 
         undoStylize(submission1);
@@ -464,8 +483,10 @@ function displaySettings() {
         if (isBeta()) {
             // Beta HTML Code
             var settingsDisplay = '<section>' +
-                '<div class="section-body">' +
+                '<div class="section-header">' +
                     '<h2 id="fa-filter">FA Filter</h2>' +
+                '</div>' +
+                '<div class="section-body">' +
                     '<div class="control-panel-item-container">' +
                         '<div class="control-panel-item-name"><h4>Add a User</h4></div>' +
                         '<div class="control-panel-item-description">' +
@@ -473,6 +494,15 @@ function displaySettings() {
                         '</div>' +
                         '<div class="control-panel-item-options">' +
                             '<input class="textbox" type="text" id="faf-add-username" maxlength="50"></input>&nbsp;&nbsp;&nbsp;<input id="faf-add" class="button" type="button" value="Add" />' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="control-panel-item-container">' +
+                        '<div class="control-panel-item-name"><h4>Word Filter</h4></div>' +
+                        '<div class="control-panel-item-description">' +
+                            '<p>Block submissions with specific words or phrases in their titles from showing up while browsing. One entry per line.</p>' +
+                        '</div>' +
+                        '<div class="control-panel-item-options">' +
+                            '<textarea id="faf-wordfilter" name="faf-wordfilter" rows="4" style="min-height:110px" class="textbox textbox100 textareasize"></textarea>' +
                         '</div>' +
                     '</div>' +
                     '<div class="control-panel-item-container">' +
@@ -501,6 +531,10 @@ function displaySettings() {
                             '<span class="faf-import-status" style="font-weight: bold; color: #FF6666; display: none;">Invalid data!</span>' +
                         '</div>' +
                     '</div>' +
+                    '<div class="section-options">' +
+                        '<span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>&nbsp;&nbsp;<input class="button mobile-button faf-update-btn" id="faf-update-top" type="button" value="Apply Filters (FA Filter)">' +
+                    '</div>' +
+                    '<br/>' +
                     '<div class="activity-periods-list">' +
                         '<table class="container faf-list faf-list-beta" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:0 15px 10px 15px">' +
                             '<tbody>' +
@@ -515,14 +549,14 @@ function displaySettings() {
                         '</table>' +
                     '</div>' +
                     '<div class="section-options">' +
-                        '<span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>&nbsp;&nbsp;<input class="button mobile-button" id="faf-update" type="button" value="Apply Filters (FA Filter)">' +
+                        '<span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>&nbsp;&nbsp;<input class="button mobile-button faf-update-btn" id="faf-update-bottom" type="button" value="Apply Filters (FA Filter)">' +
                     '</div>' +
                 '</div>' +
             '</section>';
             $(settingsDisplay).insertBefore($('section').last());
         } else {
             // Classic HTML Code
-            var settingsDisplay = '<table id="fa-filter" cellpadding="0" cellspacing="1" border="0" class="section maintable"><tbody>' +
+            var classicSettingsDisplay = '<table id="fa-filter" cellpadding="0" cellspacing="1" border="0" class="section maintable"><tbody>' +
                 '<tr><td height="22" class="cat links">&nbsp;<strong>FA Filter</strong></td></tr>' +
                 '<tr><td class="alt1 addpad ucp-site-settings" align="center">' +
                     '<table cellspacing="1" cellpadding="0" border="0"><tbody>' +
@@ -565,7 +599,7 @@ function displaySettings() {
                                 '<table cellspacing="0" cellpadding="0" border="0" class="faf-list faf-list-classic">' +
                                     '<tr><th><strong>Username</strong></th><th><strong>Submissions</strong></th><th><strong>Shouts</strong></th><th><strong>Comments</strong></th><th><strong>Notifications</strong></th></tr>' +
                                 '</table>' +
-                                '<br><br><input class="button" id="faf-update" type="button" value="Apply Filters (FA Filter)"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
+                                '<br><br><input class="button faf-update-btn" id="faf-update" type="button" value="Apply Filters (FA Filter)"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
                             '</td>' +
                             '<td class="option-description noborder">' +
                                 '<h3>Choose what items you don\'t want to see.</h3>' +
@@ -575,9 +609,11 @@ function displaySettings() {
                     '</tbody></table>' +
                 '</td></tr>' +
                 '</tbody></table>';
-            $('form').last().append(settingsDisplay);
+            $('form').last().append(classicSettingsDisplay);
         }
 
+        // Populate word filter
+        $('#faf-wordfilter').val(wordFilter.join('\n'));
         // Populate list
         $.each(userArray, function(username, data) {
             addFilterUser(username, data);
@@ -631,18 +667,18 @@ $(document.body).on('click', 'a.faf-remove', function(event) {
     var username = event.target.id.substr(7);
     delete userArray[username];
 
-    userEsc = escapeUsername(username);
+    var userEsc = escapeRegex(username);
 
     $('table.faf-list tr#filter-' + userEsc).remove();
 });
 
 // Update
-$(document.body).on('click', '#faf-update', function() {
+$(document.body).on('click', '.faf-update-btn', function() {
+    // User Filters
     $('.faf-list tr[id^="filter-"]').each(function() {
         var username = this.id.substr(7);
         var vals = {'subs':0, 'shouts':0, 'coms':0, 'notifications':0};
-
-        userEsc = escapeUsername(username);
+        var userEsc = escapeRegex(username);
 
         // Check checkboxes
         if ($('#faf-check-subs-' + userEsc).is(':checked')) { vals['subs'] = 1; }
@@ -651,6 +687,15 @@ $(document.body).on('click', '#faf-update', function() {
         if ($('#faf-check-notifications-' + userEsc).is(':checked')) { vals['notifications'] = 1; }
 
         userArray[username] = vals;
+    });
+
+    // Word Filters
+    var rawWordFilter = $('#faf-wordfilter').val().trim();
+    wordFilter = [];
+    $.each(rawWordFilter.split('\n'), function() {
+        if ($.trim(this)) {
+           wordFilter.push($.trim(this).toLowerCase());
+        }
     });
 
     // Save
@@ -718,7 +763,7 @@ $(document.body).on('click', '#faf-port-clear', function() {
 
 // Export
 $(document.body).on('click', '#faf-export', function() {
-    var exportVal = {'versionNumber': versionNumber, 'userList': userArray};
+    var exportVal = {'versionNumber': VERSION_NUMBER, 'wordFilter': wordFilter, 'userList': userArray};
     $('#faf-raw-port').val(JSON.stringify(exportVal));
 });
 
@@ -750,12 +795,8 @@ $(document.body).on('click', '#faf-import', async function() {
 });
 
 // === UTILITIES ===
-function escapeUsername(username) {
-    // Replace periods/colons/tildes with escaped versions. Who the fuck allows periods AND tildes in usernames, seriously?
-    userEsc = username.replace(/\./g, '\\.');
-    userEsc = userEsc.replace(/:/g, '\\:');
-    userEsc = userEsc.replace(/~/g, '\\~');
-    return userEsc;
+function escapeRegex(str) {
+    return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
 function updateCSS() {
@@ -773,7 +814,10 @@ function isBeta() {
 
 // IMPORT FUNCTIONALITY - UPDATE WITH EACH MAJOR UPDATE
 async function validateAndImportData(jsonData) {
-    switch (jsonData.version) {
+    switch (jsonData.versionNumber) {
+        case '1.7':
+            // Version 1.7 - User data and title filter
+            wordFilter = jsonData.wordFilter;
         case '1.6':
         default:
             // Version 1.6 - User data only
@@ -798,8 +842,10 @@ displaySettings();
 updateCSS();
 
 setTimeout(parseSettings, 50);
+if (wordFilter !== undefined && wordFilter.length > 0) {
+    setTimeout(applyWordFilters, 50);
+}
 //setTimeout(parseTagSettings, 100);
-
 // Submissions
 if (window.location.pathname.lastIndexOf('/browse', 0) === 0) setTimeout(filtersSubs, 100);
 else if (window.location.pathname.lastIndexOf('/favorites', 0) === 0) setTimeout(filtersSubs, 100);
