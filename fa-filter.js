@@ -4,7 +4,7 @@
 // @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.7.0
+// @version     1.7.1
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.deleteValue
@@ -796,7 +796,7 @@ $(document.body).on('click', '#faf-import', async function() {
 
 // === UTILITIES ===
 function escapeRegex(str) {
-    return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    return str.replace(/[-\/\\^$*+?.()|[\]{}~]/g, '\\$&');
 }
 
 function updateCSS() {
