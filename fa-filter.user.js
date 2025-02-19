@@ -3,12 +3,13 @@
 // @namespace   fa-filter
 // @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
-// @require     http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
-// @version     1.7.1
+// @require     https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js
+// @version     1.7.2
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.deleteValue
 // @grant       GM.openInTab
+// @grant       GM_addStyle
 // ==/UserScript==
 
 // === WARNING ===
@@ -18,11 +19,27 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 // Shitty workaround, but w/e
 async function main() {
 
+GM_addStyle(`
+    section.gallery figure { padding-bottom: 62px; }
+    section.gallery figcaption p:nth-of-type(2) { white-space: normal; overflow: visible; }
+    .faf-filter-table-row:hover { background-color: #888888; }
+    .faf-hidden {
+      background-color: #FFBBBB !important;
+      color: #FF0000 !important;
+    }
+    .faf-hidden b figcaption {
+      background-color: rgba(0, 0, 0, 0.95) !important;
+    }
+    .faf-hidden a:link, .faf-hidden a:visited, .faf-hidden a h3 { color: #FF2222 !important; }
+`);
+
 const VERSION_NUMBER = 1.7;
 // === INITIALIZE USER ARRAY ===
 var userArray = JSON.parse(await GM.getValue('userList', '{}'));
 var wordFilter = JSON.parse(await GM.getValue('wordFilter', '[]'));
-//var tagArray = JSON.parse(GM.getvalue('tagList', '{}'));
+
+// === INITIALIZE USER SETTINGS ===
+var fafInDropdown = await GM.getValue('fafInDropdown', false);
 
 // === GENERAL TEMPORARY VARIABLES ===
 var filterEnabled = {['subs']:true, ['shouts']:true, ['coms']:true, ['notifications']:true};
@@ -55,16 +72,6 @@ var applyWordFilters = function() {
     });
 };
 
-//var parseTagSettings = function() {
-//    $('.t-image a[href^="/view"]').each(function() {
-//        var url = $(this).attr('href');
-//        console.log(url);
-//        $.post(url, function(data) {
-//            console.log($('#keywords', data).text());
-//        });
-//    });
-//}
-
 
 // === SAVE ===
 function writeSettings() {
@@ -84,10 +91,10 @@ function writeSettings() {
         stylizeHidden(submissionFavesBeta);
         stylizeHidden(submissionInboxBeta);
 
-        submissionBeta.addClass('hidden-sub').hide();
-        submissionFavesBeta.addClass('hidden-sub').hide();
+        submissionBeta.addClass('faf-hidden hidden-sub').hide();
+        submissionFavesBeta.addClass('faf-hidden hidden-sub').hide();
         submissionInboxBeta.find('input').prop('checked', true);
-        submissionInboxBeta.addClass('hidden-sub').hide();
+        submissionInboxBeta.addClass('faf-hidden hidden-sub').hide();
 
         if (!filterEnabled['subs']) {
             submissionBeta.show();
@@ -109,10 +116,10 @@ function writeSettings() {
 
         // Mark Submissions as Checked
         submission1.children('small').children('input').prop('checked', false);
-        submission1.removeClass('hidden-sub').show();
-        submissionBeta.removeClass('hidden-sub').show();
-        submissionFavesBeta.removeClass('hidden-sub').show();
-        submissionInboxBeta.removeClass('hidden-sub').show();
+        submission1.removeClass('faf-hidden hidden-sub').show();
+        submissionBeta.removeClass('faf-hidden hidden-sub').show();
+        submissionFavesBeta.removeClass('faf=hidden hidden-sub').show();
+        submissionInboxBeta.removeClass('faf-hidden hidden-sub').show();
         submissionInboxBeta.find('input').prop('checked', false);
 
         // Favorites/Front Page
@@ -125,22 +132,26 @@ function writeSettings() {
     function hideShouts(username) {
         // Classic
         var shout = $('table[id^="shout-"] td.alt1 img[alt="' + username + '"]').closest('table[id^="shout-"]');
-        shout.addClass('hidden-shout').hide();
+        shout.addClass('faf-hidden hidden-shout').hide();
         stylizeHidden(shout.find('table'));
         shout.next('br').addClass('hidden-shout-br').hide();
 
         // Beta
-        var shoutBeta = $('.comment_container .shout-avatar img[alt="' + username + '"]').closest('.comment_container');
-        shoutBeta.addClass('hidden-shout').hide();
-        stylizeHidden(shoutBeta.find('.header'));
-        stylizeHidden(shoutBeta.find('.body'));
+        var shoutBeta = $('.comment_container img.comment_useravatar[alt="' + username + '"]').closest('.comment_container');
+        shoutBeta.addClass('faf-hidden hidden-shout').hide();
 
         // We want to only highlight and check
         var shoutManageBeta = $('table[id^="shout-"] .comments-flex-item-icon img[alt="' + username +'"]').closest('table[id^="shout-"]');
-        shoutManageBeta.addClass('hidden-shout');
+        shoutManageBeta.addClass('faf-hidden hidden-shout');
         stylizeHidden(shoutManageBeta.find('.comments-userline-flex'));
         stylizeHidden(shoutManageBeta.find('.comment_text'));
         shoutManageBeta.find('input[type="checkbox"]').prop('checked', true);
+    }
+
+    function showShouts(username) {
+      // Beta
+      var shoutBeta = $('.comment_container img.comment_useravatar[alt="' + username + '"]').closest('.comment_container');
+      shoutBeta.removeClass('faf-hidden hidden-shout').show();
     }
 
     // Hide user comments and threads
@@ -171,9 +182,8 @@ function writeSettings() {
         });
 
         // Beta
-        var commentsBeta = $('.comments-list .comment_container .avatar-desktop img[alt="' + username + '"], .comments-journal .comment_container .avatar-desktop img[alt="' + username + '"]').closest('.comment_container');
-        stylizeHidden(commentsBeta.find('.header'));
-        stylizeHidden(commentsBeta.find('.body'));
+        var commentsBeta = $('.comments-list comment-container img[alt="' + username + '"], .comments-journal .comment_container .avatar-desktop img[alt="' + username + '"]').closest('.comment_container');
+        $(commentsBeta).addClass('faf-hidden');
 
         $(commentsBeta).each(function() {
             // Get width, then hide comment
@@ -201,9 +211,8 @@ function writeSettings() {
     }
 
     function showComments(username) {
-        var comments = $('.comments-list .comment_container .avatar-desktop img[alt="' + username + '"], .comments-journal .comment_container .avatar-desktop img[alt="' + username + '"]').closest('.comment_container');
-        undoStylize(comments.find('.header'));
-        undoStylize(comments.find('.body'));
+        var comments = $('.comments-list comment-container img[alt="' + username + '"], .comments-journal .comment_container .avatar-desktop img[alt="' + username + '"]').closest('.comment_container');
+        $(comments).removeClass('faf-hidden');
 
         $(comments).each(function() {
             if ($(this).hasClass('hidden-comment')) {
@@ -232,7 +241,7 @@ function writeSettings() {
     // Hide user notifications
     function hideNotifications(username) {
         var notification = $('.message-stream a[href="/user/' + username + '/"]').closest('li');
-        notification.addClass('hidden-notification').hide();
+        notification.addClass('hidden-notification faf-hidden').hide();
         stylizeHidden(notification);
         notification.children('input').prop('checked', true);
 
@@ -260,18 +269,18 @@ function writeSettings() {
 function filtersSubs() {
     // Remove all pre-existing UI for soft-refresh
     $('[id="faf-toggle-subs"]').remove();
-    $('.faf-remove-user-external').parent().remove();
-    $('.faf-add-user-external').parent().remove();
+    $('.faf-remove-user-external').remove();
+    $('.faf-add-user-external').remove();
 
     if ($('.hidden-sub').length > 0) {
         if (isBeta()) {
             // Beta
             $display = '<li class="lileft"><a class="top-heading" id="faf-toggle-subs" href="#!"><div class="sprite-nuke menu-space-saver hideonmobile"></div>Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</a></li>';
             $('.lileft').last().after($display);
+            $searchDisplay = '<div class="alignright" style="padding-top: 1rem;"><button class="button standard" type="button" id="faf-toggle-subs">Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</button></div>';
+            $('.search-flex-container .alignright').first().after($searchDisplay);
         } else {
             // Classic
-            // $display = '<input id="faf-toggle-subs" class="button" type="button" value="Toggle Filtered Submissions (' + $('.hidden-sub').length + ')"></input>';
-            // $('form[name="replyform"]').first().append($display);
             $display = '<li><a id="faf-toggle-subs" href="#!">⚠ Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</a></li>';
             $('.search-box-container').first().before($display);
         }
@@ -287,9 +296,9 @@ function filtersSubs() {
         if (username) {
             username = username[1];
             if (username in userArray && userArray[username]['subs'] === 1) {
-                $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-remove-user-external faf-ex-subs" id="faf-' + username + '" href="#!" title="Remove ' + username + ' from filter">[Unfilter]</a></p>');
+                $(this).find('figcaption p:nth-of-type(2)').append('<a style="color: #FF5555!important;" class="faf-remove-user-external faf-ex-subs" id="faf-' + username + '" href="#!" title="Remove ' + username + ' from filter">[Unfilter]</a>');
             } else {
-                $(this).find('figcaption').append('<p><a style="color: #FF5555!important;" class="faf-add-user-external faf-ex-subs" id="faf-' + username + '" href="#!" title="Add ' + username + ' to filter">[Filter]</a></p>');
+                $(this).find('figcaption p:nth-of-type(2)').append('<a style="color: #FF5555!important;" class="faf-add-user-external faf-ex-subs" id="faf-' + username + '" href="#!" title="Add ' + username + ' to filter">[Filter]</a>');
             }
         }
     });
@@ -310,13 +319,30 @@ function filtersSubsFollow() {
 
 // Shouts
 function filtersShouts() {
+    // Remove all pre-existing UI for soft-refresh
+    $('[id="faf-toggle-shouts"]').remove();
+    $('.faf-remove-user-external').parent().remove();
+    $('.faf-add-user-external').parent().remove();
+
     if ($('.hidden-shout').length > 0) {
         $display = '<input id="faf-toggle-shouts" class="button" type="button" value="Toggle Filtered Shouts (' + $('.hidden-shout').length + ')"></input>';
         // Classic
         $('table[id^="shout-"]').first().prevAll('table.maintable:first').append($display);
         // Beta
-        $($display).insertBefore($('.section-body .comment_container').first());
+        $($display).insertAfter($('.shout-post-form'));
     }
+
+    // Beta
+    $('.userpage-layout .comment_container').each(function() {
+      var username = $(this).find('img.comment_useravatar').attr('alt');
+      if (username) {
+          if (username in userArray && userArray[username]['shouts'] === 1) {
+              $(this).find('comment-footer').prepend('<span><a style="color: #FF5555!important;" class="faf-remove-user-external faf-ex-shouts" id="faf-' + username + '" href="#!" title="Show ' + username + '\'s shouts">[Unfilter]</a></span>');
+          } else {
+              $(this).find('comment-footer').prepend('<span><a style="color: #FF5555!important;" class="faf-add-user-external faf-ex-shouts" id="faf-' + username + '" href="#!" title="Hide ' + username + '\'s shouts">[Filter]</a></span>');
+          }
+      }
+    })
 }
 
 // Shouts (Controls, Beta Only)
@@ -336,26 +362,39 @@ function filtersComments() {
     $('.faf-add-user-external').parent().remove();
 
     if ($('.hidden-comment').length > 0) {
-        $display = '<input style="float:right;" id="faf-toggle-comments" class="button" type="button" value="Toggle Filtered Comments (' + $('.hidden-comment').length + ')"></input>';
+        const display = '<tr><td><input id="faf-toggle-comments" class="button" type="button" value="Toggle Filtered Comments (' + $('.hidden-comment').length + ')"></input></td></tr>';
         if (isBeta()) {
             // Beta
-            $($display).insertBefore('#comments-submission, #responsebox');
+            $(display).insertBefore('#comments-submission, #comments-journal');
         } else {
             // Classic
-            $('table.container-comment').first().parent().parent().prev().children().append($display);
+            $display = '<tr><td><input id="faf-toggle-comments" class="button" type="button" value="Toggle Filtered Comments (' + $('.hidden-comment').length + ')"></input></td></tr>';
+            $('#comments-submission').parent().parent().before($display);
         }
     }
 
-    $('.comments-list .comment_container, .comments-journal .comment_container').each(function() {
-        var username = $(this).find('.avatar-desktop img').attr('alt');
+    // Beta
+    $('.comments-list .comment_container').each(function() {
+        var username = $(this).find('img.comment_useravatar').attr('alt');
         if (username) {
             if (username in userArray && userArray[username]['coms'] === 1) {
-                $(this).find('.comment-date').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-remove-user-external faf-ex-coms" id="faf-' + username + '" href="#!" title="Show ' + username + '\'s comments">[Unfilter]</a></span>');
+                $(this).find('comment-footer').prepend('<span><a style="color: #FF5555!important; position: relative; bottom: -8px;" class="faf-remove-user-external faf-ex-coms" id="faf-' + username + '" href="#!" title="Show ' + username + '\'s comments">[Unfilter]</a></span>');
             } else {
-                $(this).find('.comment-date').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-add-user-external faf-ex-coms" id="faf-' + username + '" href="#!" title="Hide ' + username + '\'s comments">[Filter]</a></span>');
+                $(this).find('comment-footer').prepend('<span><a style="color: #FF5555!important; position: relative; bottom: -8px;" class="faf-add-user-external faf-ex-coms" id="faf-' + username + '" href="#!" title="Hide ' + username + '\'s comments">[Filter]</a></span>');
             }
         }
     });
+    // Classic
+    $('#comments-submission table').each(function() {
+      var username = $(this).find('img.avatar').attr('alt');
+      if (username) {
+        if (username in userArray && userArray[username]['coms'] === 1) {
+          $(this).find('.replyto-name').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-remove-user-external faf-ex-coms" id="faf-' + username + '" href="#!" title="Show ' + username + '\'s comments">[Unfilter]</a></span>');
+        } else {
+          $(this).find('.replyto-name').append('<span>&nbsp;<a style="color: #FF5555!important;" class="faf-add-user-external faf-ex-coms" id="faf-' + username + '" href="#!" title="Hide ' + username + '\'s comments">[Filter]</a></span>');
+        }
+      }
+    })
 }
 
 // Notifications
@@ -420,30 +459,51 @@ $(document.body).on('click', '#faf-toggle-notifications', function() {
 // Add submission filter outside of settings
 $(document.body).on('click', '.faf-add-user-external', function() {
     var addUser = $(this).attr('id').match('faf-(.*)')[1];
+    var filterType = $(this).attr('class').split(/\s+/).find((c) => c.startsWith('faf-ex-')).substring(7);
 
     // Add to array
     if (!(addUser in userArray)) {
-        userArray[addUser] = {
-            'subs': $(this).hasClass('faf-ex-subs') ? 1 : 0,
-            'shouts': $(this).hasClass('faf-ex-shouts') ? 1 : 0,
-            'coms': $(this).hasClass('faf-ex-coms') ? 1 : 0,
-            'notifications': $(this).hasClass('faf-ex-notifications') ? 1 : 0
-        };
+      userArray[addUser] = {
+        'subs': filterType === 'subs' ? 1 : 0,
+        'shouts': filterType === 'shouts' ? 1 : 0,
+        'coms': filterType === 'coms' ? 1 : 0,
+        'notifications': filterType === 'notifications' ? 1 : 0
+      };
     } else {
-        if ($(this).hasClass('faf-ex-subs')) {
-            userArray[addUser]['subs'] = 1;
-        } else if ($(this).hasClass('faf-ex-coms')) {
-            userArray[addUser]['coms'] = 1;
-        }
+      switch(filterType) {
+        case 'subs':
+          userArray[addUser]['subs'] = 1;
+          break;
+        case 'coms':
+          userArray[addUser]['coms'] = 1;
+          break;
+        case 'shouts':
+          userArray[addUser]['shouts'] = 1;
+          break;
+        case 'notifications':
+          userArray[addUser]['notifications'] = 1;
+          break;
+      }
     }
 
     // Hide, replace link, and save
-    if ($(this).hasClass('faf-ex-subs')) {
+    switch(filterType) {
+      case 'subs':
         hideSubmissions(addUser);
         filtersSubs();
-    } else if ($(this).hasClass('faf-ex-coms')) {
+        break;
+      case 'coms':
         hideComments(addUser);
         filtersComments();
+        break;
+      case 'shouts':
+        hideShouts(addUser);
+        filtersShouts();
+        break;
+      case 'notifications':
+        userArray[addUser]['notifications'] = 1;
+        filtersNotifications();
+        break;
     }
     writeSettings();
 });
@@ -451,164 +511,192 @@ $(document.body).on('click', '.faf-add-user-external', function() {
 // Remove submission filter outside of settings
 $(document.body).on('click', '.faf-remove-user-external', function() {
     var removeUser = $(this).attr('id').match('faf-(.*)')[1];
+    var filterType = $(this).attr('class').split(/\s+/).find((c) => c.startsWith('faf-ex-')).substring(7);
 
-    // Remove from array
+    // Remove from array, show, replace link
     if (removeUser in userArray) {
-        if ($(this).hasClass('faf-ex-subs')) {
-            userArray[removeUser]['subs'] = 0;
-        } else if ($(this).hasClass('faf-ex-coms')) {
-            userArray[removeUser]['coms'] = 0;
-        }
+      switch(filterType) {
+        case 'subs':
+          userArray[removeUser]['subs'] = 0;
+          showSubmissions(removeUser);
+          filtersSubs();
+          break;
+        case 'coms':
+          userArray[removeUser]['coms'] = 0;
+          showComments(removeUser);
+          filtersComments();
+          break;
+        case 'shouts':
+          userArray[removeUser]['shouts'] = 0;
+          showShouts(removeUser);
+          filtersShouts();
+          break;
+        case 'notifications':
+          userArray[removeUser]['notifications'] = 0;
+          filtersNotifications();
+          break;
+      }
     }
 
-    // Show, replace link, and save
-    if ($(this).hasClass('faf-ex-subs')) {
-        showSubmissions(removeUser);
-        filtersSubs();
-    } else if ($(this).hasClass('faf-ex-coms')) {
-        showComments(removeUser);
-        filtersComments();
-    }
+    // Save
     writeSettings();
 });
 
 // == User Settings ==
 function displaySettings() {
     // Navbar link
-    $('<li class="noblock"><a target="_blank" href="/controls/site-settings#fa-filter">FA Filter</a></li>').insertAfter($('.navhideonmobile li').last());
+    if (fafInDropdown) {
+      $('<h3><a target="_blank" href="/controls/site-settings#fa-filter" style="font-weight: bold;">FA Filter</a></h3>').prependTo($('.navhideonmobile .submenu-trigger').last().find('.column'));
+    } else {
+      $('<li><a target="_blank" href="/controls/site-settings#fa-filter" style="font-weight: bold;">FA Filter</a></li>').insertAfter($('li.message-bar-desktop'));
+    }
+    $('<h2><a target="_blank" href="/controls/site-settings#fa-filter">FA Filter</a></h2>').insertAfter($('.mobile-menu .nav-ac-container').last());
     // Navbar link (Classic)
     $('<li class="noblock"><a target="_blank" href="/controls/site-settings#fa-filter">FA Filter</a></li>').insertAfter($('li#sfw-toggle'));
 
     if (window.location.pathname.lastIndexOf('/controls/site-settings', 0) === 0) {
         if (isBeta()) {
             // Beta HTML Code
-            var settingsDisplay = '<section>' +
-                '<div class="section-header">' +
-                    '<h2 id="fa-filter">FA Filter</h2>' +
-                '</div>' +
-                '<div class="section-body">' +
-                    '<div class="control-panel-item-container">' +
-                        '<div class="control-panel-item-name"><h4>Add a User</h4></div>' +
-                        '<div class="control-panel-item-description">' +
-                            '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br/>Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".</p>' +
-                        '</div>' +
-                        '<div class="control-panel-item-options">' +
-                            '<input class="textbox" type="text" id="faf-add-username" maxlength="50"></input>&nbsp;&nbsp;&nbsp;<input id="faf-add" class="button" type="button" value="Add" />' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="control-panel-item-container">' +
-                        '<div class="control-panel-item-name"><h4>Word Filter</h4></div>' +
-                        '<div class="control-panel-item-description">' +
-                            '<p>Block submissions with specific words or phrases in their titles from showing up while browsing. One entry per line.</p>' +
-                        '</div>' +
-                        '<div class="control-panel-item-options">' +
-                            '<textarea id="faf-wordfilter" name="faf-wordfilter" rows="4" style="min-height:110px" class="textbox textbox100 textareasize"></textarea>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="control-panel-item-container">' +
-                        '<div class="control-panel-item-name"><h4>Validate Filters</h4></div>' +
-                        '<div class="control-panel-item-description">' +
-                            '<p>This double-checks to make sure that your filtered usernames are correct and, optionally, removes users that don\'t have any enabled filters. This automatically saves the list.</p>' +
-                            '<strong class="highlight">Validate Only</strong> - Simply validates that the usernames that have been entered are correctly formatted.<br/>' +
-                            '<strong class="highlight">Validate and Remove Unused</strong> - Does the same as above and also removes any users with zero filters in the list.<br/>' +
-                        '</div>' +
-                        '<div class="control-panel-item-options">' +
-                            '<select name="faf-validate-options" id="select-faf-validate-options" class="styled">' +
-                                '<option value="v" selected="selected">Vaildate Only</option>' +
-                                '<option value="vr">Validate and Remove Unused</option>' +
-                            '</select><br/><input id="faf-validate" class="button" type="button" value="Apply" style="margin-top: 10px;"/><br/>' +
-                            '<span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="control-panel-item-container">' +
-                        '<div class="control-panel-item-name"><h4>Export/Import Data</h4></div>' +
-                        '<div class="control-panel-item-description">' +
-                            '<p>Export your filters or import them from somewhere else.</p>' +
-                        '</div>' +
-                        '<div class="control-panel-item-options">' +
-                            '<input class="textbox" type="text" id="faf-raw-port" style="margin-bottom: 10px; width: 100%;" placeholder="Paste your filter data here..."></input><br/>' +
-                            '<input id="faf-port-clear" class="button" type="button" value="Clear" />&nbsp;&nbsp;&nbsp;<input id="faf-import" class="button" type="button" value="Import" />&nbsp;&nbsp;&nbsp;<input id="faf-export" class="button" type="button" value="Export" /><br/>' +
-                            '<span class="faf-import-status" style="font-weight: bold; color: #FF6666; display: none;">Invalid data!</span>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="section-options">' +
-                        '<span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>&nbsp;&nbsp;<input class="button mobile-button faf-update-btn" id="faf-update-top" type="button" value="Apply Filters (FA Filter)">' +
-                    '</div>' +
-                    '<br/>' +
-                    '<div class="activity-periods-list">' +
-                        '<table class="container faf-list faf-list-beta" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:0 15px 10px 15px">' +
-                            '<tbody>' +
-                                '<tr>' +
-                                    '<td class="p10t p5r p5b"><h3>Username</h3></td>' +
-                                    '<td class="p10t p5r p5b" width="200px"><h3>Submissions</h3></td>' +
-                                    '<td class="p10t p5r p5b" width="200px"><h3>Shouts</h3></td>' +
-                                    '<td class="p10t p5r p5b" width="200px"><h3>Comments</h3></td>' +
-                                    '<td class="p10t p5r p5b" width="200px"><h3>Notifications</h3></td>' +
-                                '</tr>' +
-                            '</tbody>' +
-                        '</table>' +
-                    '</div>' +
-                    '<div class="section-options">' +
-                        '<span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>&nbsp;&nbsp;<input class="button mobile-button faf-update-btn" id="faf-update-bottom" type="button" value="Apply Filters (FA Filter)">' +
-                    '</div>' +
-                '</div>' +
-            '</section>';
+            var settingsDisplay = `<section>
+                <div class="section-header">
+                    <h2 id="fa-filter">FA Filter</h2>
+                </div>
+                <div class="section-body">
+                    <div class="control-panel-item-container">
+                        <div class="control-panel-item-name"><h4>Filter Location</h4></div>
+                        <div class="control-panel-item-description">
+                            <p>Choose where you would like the location of the FA Filter link. Choice autosaves and changes will be shown on refresh.</p>
+                        </div>
+                        <div class="control-panel-item-options">
+                            <input id="faf-button-location-bar" type="radio" name="faf-button-location" value="false">
+                            <label for="faf-button-location-bar">Header</label>
+                            <br>
+                            <input id="faf-button-location-drop" type="radio" name="faf-button-location" value="true">
+                            <label for="faf-button-location-drop">Settings List (Gear icon)</label>
+                        </div>
+                    </div>
+                    <div class="control-panel-item-container">
+                        <div class="control-panel-item-name"><h4>Add a User</h4></div>
+                        <div class="control-panel-item-description">
+                            <p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br/>Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".</p>
+                        </div>
+                        <div class="control-panel-item-options">
+                            <input class="textbox" type="text" id="faf-add-username" maxlength="50"></input>&nbsp;&nbsp;&nbsp;<input id="faf-add" class="button" type="button" value="Add" />
+                        </div>
+                    </div>
+                    <div class="control-panel-item-container">
+                        <div class="control-panel-item-name"><h4>Word Filter</h4></div>
+                        <div class="control-panel-item-description">
+                            <p>Block submissions with specific words or phrases in their titles from showing up while browsing. One entry per line.</p>
+                        </div>
+                        <div class="control-panel-item-options">
+                            <textarea id="faf-wordfilter" name="faf-wordfilter" rows="4" style="min-height:110px" class="textbox textbox100 textareasize"></textarea>
+                        </div>
+                    </div>
+                    <div class="control-panel-item-container">
+                        <div class="control-panel-item-name"><h4>Validate Filters</h4></div>
+                        <div class="control-panel-item-description">
+                            <p>This double-checks to make sure that your filtered usernames are correct and, optionally, removes users that don\'t have any enabled filters. This automatically saves the list.</p>
+                            <strong class="highlight">Validate Only</strong> - Simply validates that the usernames that have been entered are correctly formatted.<br/>
+                            <strong class="highlight">Validate and Remove Unused</strong> - Does the same as above and also removes any users with zero filters in the list.<br/>
+                        </div>
+                        <div class="control-panel-item-options">
+                            <select name="faf-validate-options" id="select-faf-validate-options" class="styled">
+                                <option value="v" selected="selected">Vaildate Only</option>
+                                <option value="vr">Validate and Remove Unused</option>
+                            </select><br/><input id="faf-validate" class="button" type="button" value="Apply" style="margin-top: 10px;"/><br/>
+                            <span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>
+                        </div>
+                    </div>
+                    <div class="control-panel-item-container">
+                        <div class="control-panel-item-name"><h4>Export/Import Data</h4></div>
+                        <div class="control-panel-item-description">
+                            <p>Export your filters or import them from somewhere else.</p>
+                        </div>
+                        <div class="control-panel-item-options">
+                            <input class="textbox" type="text" id="faf-raw-port" style="margin-bottom: 10px; width: 100%;" placeholder="Paste your filter data here..."></input><br/>
+                            <input id="faf-port-clear" class="button" type="button" value="Clear" />&nbsp;&nbsp;&nbsp;<input id="faf-import" class="button" type="button" value="Import" />&nbsp;&nbsp;&nbsp;<input id="faf-export" class="button" type="button" value="Export" /><br/>
+                            <span class="faf-import-status" style="font-weight: bold; color: #FF6666; display: none;">Invalid data!</span>
+                        </div>
+                    </div>
+                    <div class="section-options">
+                        <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>&nbsp;&nbsp;<input class="button mobile-button faf-update-btn" id="faf-update-top" type="button" value="Apply Filters (FA Filter)">
+                    </div>
+                    <br/>
+                    <div class="activity-periods-list">
+                        <table class="container faf-list faf-list-beta" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:0 15px 10px 15px">
+                            <tbody>
+                                <tr>
+                                    <td class="p10t p5r p5b"><h3>Username</h3></td>
+                                    <td class="p10t p5r p5b" width="200px"><h3>Submissions</h3></td>
+                                    <td class="p10t p5r p5b" width="200px"><h3>Shouts</h3></td>
+                                    <td class="p10t p5r p5b" width="200px"><h3>Comments</h3></td>
+                                    <td class="p10t p5r p5b" width="200px"><h3>Notifications</h3></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="section-options">
+                        <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>&nbsp;&nbsp;<input class="button mobile-button faf-update-btn" id="faf-update-bottom" type="button" value="Apply Filters (FA Filter)">
+                    </div>
+                </div>
+            </section>`;
             $(settingsDisplay).insertBefore($('section').last());
         } else {
             // Classic HTML Code
-            var classicSettingsDisplay = '<table id="fa-filter" cellpadding="0" cellspacing="1" border="0" class="section maintable"><tbody>' +
-                '<tr><td height="22" class="cat links">&nbsp;<strong>FA Filter</strong></td></tr>' +
-                '<tr><td class="alt1 addpad ucp-site-settings" align="center">' +
-                    '<table cellspacing="1" cellpadding="0" border="0"><tbody>' +
-                        '<tr>' +
-                            '<th><strong>Add a User</strong></th>' +
-                            '<td><input type="text" id="faf-add-username" maxlength="50"></input>&nbsp;<input id="faf-add" class="button" type="button" value="Add User"></td>' +
-                            '<td class="option-description">' +
-                                '<h3>Hide a user\'s contributions to the site.</h3>' +
-                                '<p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br>Note: Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".</p>' +
-                            '</td>' +
-                        '</tr>' +
-                        '<tr>' +
-                            '<th><strong>Validate Filters</strong></th>' +
-                            '<td>' +
-                                '<select name="faf-validate-options" id="select-faf-validate-options" class="styled">' +
-                                    '<option value="v" selected="selected">Vaildate Filters Only</option>' +
-                                    '<option value="vr">Validate and Remove Unused Filters</option>' +
-                                '</select>&nbsp;<input id="faf-validate" class="button" type="button" value="Apply" /><br/>' +
-                                '<span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>' +
-                            '</td>' +
-                            '<td class="option-description">' +
-                                '<h3>Clean up everything and revalidate filtered usernames.</h3>' +
-                                '<p>This double-checks to make sure that your filtered usernames are correct and, optionally, removes users that don\'t have any enabled filters.<br/><strong>Note:</strong> This automatically saves the list.</p>' +
-                            '</td>' +
-                        '</tr>' +
-                        '<tr>' +
-                            '<th><strong>Export/Import Data</strong></th>' +
-                            '<td>' +
-                                 '<input type="text" id="faf-raw-port" style="margin-bottom: 10px;" placeholder="Paste your filter data here..."></input><br/>' +
-                                 '<input id="faf-port-clear" class="button" type="button" value="Clear" />&nbsp;&nbsp;&nbsp;<input id="faf-import" class="button" type="button" value="Import" />&nbsp;&nbsp;&nbsp;<input id="faf-export" class="button" type="button" value="Export" /><br/>' +
-                                 '<span class="faf-import-status" style="font-weight: bold; color: #FF6666; display: none;">Invalid data!</span>' +
-                            '</td>' +
-                            '<td class="option-description">' +
-                                '<h3>Grab your filters to send to another browser.</h3>' +
-                                '<p>Export your filters or import them from somewhere else.</p>' +
-                            '</td>' +
-                        '<tr>' +
-                            '<th class="noborder" style="vertical-align: text-top;"><strong style="position: relative; top: 25px;">Modify Filters</strong></th>' +
-                            '<td class="noborder">' +
-                                '<table cellspacing="0" cellpadding="0" border="0" class="faf-list faf-list-classic">' +
-                                    '<tr><th><strong>Username</strong></th><th><strong>Submissions</strong></th><th><strong>Shouts</strong></th><th><strong>Comments</strong></th><th><strong>Notifications</strong></th></tr>' +
-                                '</table>' +
-                                '<br><br><input class="button faf-update-btn" id="faf-update" type="button" value="Apply Filters (FA Filter)"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>' +
-                            '</td>' +
-                            '<td class="option-description noborder">' +
-                                '<h3>Choose what items you don\'t want to see.</h3>' +
-                                '<p>If you still want to see some of the things that a user contributes, you can control that here.</p>' +
-                            '</td>' +
-                        '</tr>' +
-                    '</tbody></table>' +
-                '</td></tr>' +
-                '</tbody></table>';
+            var classicSettingsDisplay = `<table id="fa-filter" cellpadding="0" cellspacing="1" border="0" class="section maintable"><tbody>
+                <tr><td height="22" class="cat links">&nbsp;<strong>FA Filter</strong></td></tr>
+                <tr><td class="alt1 addpad ucp-site-settings" align="center">
+                    <table cellspacing="1" cellpadding="0" border="0"><tbody>
+                        <tr>
+                            <th><strong>Add a User</strong></th>
+                            <td><input type="text" id="faf-add-username" maxlength="50"></input>&nbsp;<input id="faf-add" class="button" type="button" value="Add User"></td>
+                            <td class="option-description">
+                                <h3>Hide a user\'s contributions to the site.</h3>
+                                <p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br>Note: Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><strong>Validate Filters</strong></th>
+                            <td>
+                                <select name="faf-validate-options" id="select-faf-validate-options" class="styled">
+                                    <option value="v" selected="selected">Vaildate Filters Only</option>
+                                    <option value="vr">Validate and Remove Unused Filters</option>
+                                </select>&nbsp;<input id="faf-validate" class="button" type="button" value="Apply" /><br/>
+                                <span class="faf-validate-status" style="font-weight: bold; color: #009900; display: none;">Validated! 0 user(s) have been modified or removed.</span>
+                            </td>
+                            <td class="option-description">
+                                <h3>Clean up everything and revalidate filtered usernames.</h3>
+                                <p>This double-checks to make sure that your filtered usernames are correct and, optionally, removes users that don\'t have any enabled filters.<br/><strong>Note:</strong> This automatically saves the list.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><strong>Export/Import Data</strong></th>
+                            <td>
+                                 <input type="text" id="faf-raw-port" style="margin-bottom: 10px;" placeholder="Paste your filter data here..."></input><br/>
+                                 <input id="faf-port-clear" class="button" type="button" value="Clear" />&nbsp;&nbsp;&nbsp;<input id="faf-import" class="button" type="button" value="Import" />&nbsp;&nbsp;&nbsp;<input id="faf-export" class="button" type="button" value="Export" /><br/>
+                                 <span class="faf-import-status" style="font-weight: bold; color: #FF6666; display: none;">Invalid data!</span>
+                            </td>
+                            <td class="option-description">
+                                <h3>Grab your filters to send to another browser.</h3>
+                                <p>Export your filters or import them from somewhere else.</p>
+                            </td>
+                        <tr>
+                            <th class="noborder" style="vertical-align: text-top;"><strong style="position: relative; top: 25px;">Modify Filters</strong></th>
+                            <td class="noborder">
+                                <table cellspacing="0" cellpadding="0" border="0" class="faf-list faf-list-classic">
+                                    <tr><th><strong>Username</strong></th><th><strong>Submissions</strong></th><th><strong>Shouts</strong></th><th><strong>Comments</strong></th><th><strong>Notifications</strong></th></tr>
+                                </table>
+                                <br><br><input class="button faf-update-btn" id="faf-update" type="button" value="Apply Filters (FA Filter)"> <span class="faf-update-status" style="font-weight: bold; color: #006600; display: none;">Update successful!</span>
+                            </td>
+                            <td class="option-description noborder">
+                                <h3>Choose what items you don\'t want to see.</h3>
+                                <p>If you still want to see some of the things that a user contributes, you can control that here.</p>
+                            </td>
+                        </tr>
+                    </tbody></table>
+                </td></tr>
+                </tbody></table>`;
             $('form').last().append(classicSettingsDisplay);
         }
 
@@ -618,6 +706,12 @@ function displaySettings() {
         $.each(userArray, function(username, data) {
             addFilterUser(username, data);
         });
+        // Populate settings
+        if (fafInDropdown) {
+          $('#faf-button-location-drop').prop('checked', true);
+        } else {
+          $('#faf-button-location-bar').prop('checked', true);
+        }
     }
 }
 
@@ -794,18 +888,15 @@ $(document.body).on('click', '#faf-import', async function() {
     }
 });
 
+// SETTINGS
+$(document.body).on('change', 'input[type=radio][name=faf-button-location]', async function() {
+  fafInDropdown = this.value === "true";
+  GM.setValue('fafInDropdown', fafInDropdown);
+});
+
 // === UTILITIES ===
 function escapeRegex(str) {
     return str.replace(/[-\/\\^$*+?.()|[\]{}~]/g, '\\$&');
-}
-
-function updateCSS() {
-    // Fuck Greasemonkey
-    var newCSS = '<style type="text/css">' +
-            'section.gallery figure { padding-bottom: 62px; }' +
-            '.faf-filter-table-row:hover { background-color: #888888; }' +
-        '</style>';
-    $('head').append(newCSS);
 }
 
 function isBeta() {
@@ -839,7 +930,6 @@ async function validateAndImportData(jsonData) {
 }
 
 displaySettings();
-updateCSS();
 
 setTimeout(parseSettings, 50);
 if (wordFilter !== undefined && wordFilter.length > 0) {

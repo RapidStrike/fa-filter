@@ -14,6 +14,13 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.7.2</b> (2025-02-19)<br>
+- Added the ability to filter shouts! (Modern view only)
+- Added the ability to filter comments!
+- Fixed an issue with the Filter button not showing on hidden description mode.
+- You can now choose the location of the filter button (Modern view only, per request).
+- An additional button has been added to the Browse section (Modern view only, per request).
+
 <b>1.7.1</b> (2020-08-04)<br>
 - Fixed tilde detection (sorry about that)
 
@@ -23,7 +30,7 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 
 <b>1.6.1</b> (2020-01-27)<br>
 - Fixed classic layout compatibility. Turns out FA is slowly modernizing the classic layout as well.
-- Added the export functionalty for the classic view as well.
+- Added the export functionality for the classic view as well.
 
 <b>1.6.0</b> (2020-01-10)<br>
 - NEW EXPORT FUNCTIONALITY! You can now transfer your data between browsers or share your filters with others.
