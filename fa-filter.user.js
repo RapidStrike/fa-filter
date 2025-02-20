@@ -4,7 +4,7 @@
 // @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js
-// @version     1.7.2
+// @version     1.7.3
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.deleteValue
@@ -62,8 +62,7 @@ var applyWordFilters = function() {
         var wordFilterExp = new RegExp(wordFilterExpTxt, 'i');
         if (wordFilterExp.test($(this).text())) {
             var mainElement = $(this).closest('figure');
-            stylizeHidden(mainElement);
-            mainElement.addClass('hidden-sub').hide();
+            mainElement.addClass('faf-hidden hidden-sub').hide();
 
             if (!filterEnabled.subs) {
                 mainElement.show();
@@ -87,10 +86,6 @@ function writeSettings() {
         var submissionFavesBeta = $('figure[data-user="u-' + escapeRegex(username) + '"]');
         var submissionInboxBeta = $('a[href="/user/' + username + '"]').closest('figure');
 
-        stylizeHidden(submissionBeta);
-        stylizeHidden(submissionFavesBeta);
-        stylizeHidden(submissionInboxBeta);
-
         submissionBeta.addClass('faf-hidden hidden-sub').hide();
         submissionFavesBeta.addClass('faf-hidden hidden-sub').hide();
         submissionInboxBeta.find('input').prop('checked', true);
@@ -108,11 +103,6 @@ function writeSettings() {
         var submissionBeta = $('figure.u-' + escapeRegex(username));
         var submissionFavesBeta = $('figure[data-user="u-' + escapeRegex(username) + '"]');
         var submissionInboxBeta = $('a[href^="/user/' + username + '"]').closest('figure');
-
-        undoStylize(submission1);
-        undoStylize(submissionBeta);
-        undoStylize(submissionFavesBeta);
-        undoStylize(submissionInboxBeta);
 
         // Mark Submissions as Checked
         submission1.children('small').children('input').prop('checked', false);
@@ -278,7 +268,7 @@ function filtersSubs() {
             $display = '<li class="lileft"><a class="top-heading" id="faf-toggle-subs" href="#!"><div class="sprite-nuke menu-space-saver hideonmobile"></div>Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</a></li>';
             $('.lileft').last().after($display);
             $searchDisplay = '<div class="alignright" style="padding-top: 1rem;"><button class="button standard" type="button" id="faf-toggle-subs">Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</button></div>';
-            $('.search-flex-container .alignright').first().after($searchDisplay);
+            $('.search-flex-container .alignright, #search-flex-container .alignright').first().after($searchDisplay);
         } else {
             // Classic
             $display = '<li><a id="faf-toggle-subs" href="#!">⚠ Toggle Filtered Submissions (' + $('.hidden-sub').length + ')</a></li>';
@@ -290,7 +280,7 @@ function filtersSubs() {
 
     $('figure').each(function() {
         var username = $(this).attr('class').match('u-([^\\s]+)');
-        if (!username) {
+        if (!username && $(this).attr('data-user')) {
             username = $(this).attr('data-user').match('u-([^\\s]+)');
         }
         if (username) {

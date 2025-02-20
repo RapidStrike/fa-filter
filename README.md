@@ -14,6 +14,10 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.7.3</b> (2025-02-19)<br>
+- Fixed missing button on Search.
+- Fixed crash in user gallery. Unsure if I should even keep it active in this case since it would not make sense for a user to visit a filtered user in the first place.
+
 <b>1.7.2</b> (2025-02-19)<br>
 - Added the ability to filter shouts! (Modern view only)
 - Added the ability to filter comments!
