@@ -4,12 +4,12 @@
 // @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js
-// @version     1.7.3
+// @version     1.7.4
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.deleteValue
 // @grant       GM.openInTab
-// @grant       GM_addStyle
+// @grant       GM.addStyle
 // ==/UserScript==
 
 // === WARNING ===
@@ -19,7 +19,7 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 // Shitty workaround, but w/e
 async function main() {
 
-GM_addStyle(`
+GM.addStyle(`
     section.gallery figure { padding-bottom: 62px; }
     section.gallery figcaption p:nth-of-type(2) { white-space: normal; overflow: visible; }
     .faf-filter-table-row:hover { background-color: #888888; }
