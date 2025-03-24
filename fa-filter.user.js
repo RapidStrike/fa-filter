@@ -4,7 +4,8 @@
 // @description Filters user-defined content while browsing Furaffinity.
 // @include     *://www.furaffinity.net/*
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js
-// @version     1.7.4
+// @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
+// @version     1.7.5
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.deleteValue

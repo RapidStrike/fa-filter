@@ -14,6 +14,9 @@ This is a simple userscript for filtering out people you don't want to see on Fu
 - A quick link to the settings in the top bar (added as part of the site settings)
 
 ## Changelog
+<b>1.7.5</b> (2025-03-23)<br>
+- I keep forgetting that Greasemonkey and Violentmonkey/Tampermonkey/etc have different functionality. This should fix it.
+
 <b>1.7.4</b> (2025-03-06)<br>
 - Greasemonkey does not allow for GM_addStyle; forgot to change it to a period rather than an underscore.
 
