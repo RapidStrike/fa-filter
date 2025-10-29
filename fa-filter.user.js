@@ -5,7 +5,7 @@
 // @include     *://www.furaffinity.net/*
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js
 // @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
-// @version     1.7.5
+// @version     1.7.6
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       GM.deleteValue
@@ -647,6 +647,16 @@ function displaySettings() {
                                 <p>Tired of seeing somebody\'s contributions on the site? Add them to your filter list!<br>Note: Enter in the username of the person you want to filter, which is the username that would appear after "furaffinity.net/user/".</p>
                             </td>
                         </tr>
+                        <tr>
+                            <th><strong>Word Filter</strong></th>
+                            <td>
+                                <textarea id="faf-wordfilter" name="faf-wordfilter" rows="4" style="min-height:110px; width: 100%;" class="textbox"></textarea>
+                            </td>
+                            <td class="option-description">
+                                <h3>Hide submissions with specific words of phrases.</h3>
+                                <p>Block submissions with specific words or phrases in their titles from showing up while browsing. One entry per line.</p>
+                            </td>
+						</tr>
                         <tr>
                             <th><strong>Validate Filters</strong></th>
                             <td>
